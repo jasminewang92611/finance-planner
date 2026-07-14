@@ -190,7 +190,7 @@ body{
 /* ---- 动态列表项 ---- */
 .line-item{
   display:grid;
-  grid-template-columns:1fr 120px 32px;
+  grid-template-columns:1fr 150px 32px;
   gap:8px;
   align-items:center;
   margin-bottom:8px;
@@ -456,7 +456,7 @@ body{
   
   /* 表单元素加大触控区域 */
   .form-input,.form-select{padding:10px 12px;font-size:16px}
-  .line-item{grid-template-columns:1fr 90px 28px;gap:6px}
+  .line-item{grid-template-columns:1fr 110px 28px;gap:6px}
   .form-unit{padding:10px 8px}
   
   /* 汇总栏 */
@@ -484,8 +484,8 @@ body{
   html{font-size:14px}
   .header-logo{width:32px;height:32px;font-size:16px}
   .risk-card{padding:12px}
-  .goal-card{grid-template-columns:1fr}
-  .line-item{grid-template-columns:1fr 70px 28px}
+  .goal-card{grid-template-columns:1fr 1fr}
+  .line-item{grid-template-columns:1fr 90px 28px}
   .summary-bar{flex-direction:column;text-align:center}
 }
 
@@ -1105,7 +1105,7 @@ body{
 
       <div class="btn-row">
         <button class="btn btn-ghost" onclick="goStep(5)">← 修改规划</button>
-        <button class="btn btn-ghost" onclick="window.print()">打印报告</button>
+        <button class="btn btn-ghost" onclick="window.print()">保存报告</button>
         <button class="btn btn-accent" onclick="generateReport()">🔄 重新分析</button>
       </div>
     </div>
@@ -1876,7 +1876,7 @@ function renderFamilyUI(){
         </div>
         ${familyMembers.length>1?`<button class="btn-remove" onclick="removeFamilyMember(${m.id})" style="width:24px;height:24px;font-size:12px">×</button>`:''}
       </div>
-      <div class="form-grid" style="grid-template-columns:1fr 1fr 1fr">
+      <div class="form-grid" style="grid-template-columns:1fr">
         ${isSelf ? `<div class="form-group">
           <label class="form-label">月收入 <span style="font-size:10px;color:var(--c-text-sec)">（同步自第2步）</span></label>
           <div style="padding:6px 8px;font-size:13px;font-weight:600;color:var(--c-primary);background:var(--c-bg);border-radius:6px">¥${fmt(step2Income)} /月</div>
@@ -1888,6 +1888,8 @@ function renderFamilyUI(){
             <span class="form-unit" style="padding:6px 8px;font-size:12px">元/月</span>
           </div>
         </div>`}
+      </div>
+      <div class="form-grid" style="grid-template-columns:1fr 1fr">
         <div class="form-group">
           <label class="form-label">已有寿险${!isWageEarner?'（无需）':''}</label>
           <div class="form-suffix">
@@ -1904,6 +1906,8 @@ function renderFamilyUI(){
             <span class="form-unit" style="padding:6px 8px;font-size:12px">万元</span>
           </div>
         </div>
+      </div>
+      <div class="form-grid" style="grid-template-columns:1fr 1fr">
         <div class="form-group">
           <label class="form-label">已有医疗险</label>
           <select class="form-select" style="padding:6px 8px;font-size:12px"
@@ -2749,19 +2753,15 @@ function renderROIChart(principal,monthlyContribution,workYears,currentAge,retir
     }
   }
 
-  // 生成每5年标注的数据点
-  const annotations=[];
-  for(let y=0;y<=totalYears;y++){
-    const ageNow=currentAge+y;
-    if(ageNow%5===0||y===0){
-      let val=null;
-      if(y<=workYears){
-        val=growth[y];
-      }else{
-        val=decumulation[y];
-      }
+  // 生成每10年标注的数据点
+  var annotations=[];
+  for(var y=0;y<=totalYears;y++){
+    if(y%10===0||y===totalYears||y===workYears){
+      var val=null;
+      if(y<=workYears){ val=growth[y]; }
+      else{ val=decumulation[y]; }
       if(val!==null&&val!==undefined){
-        annotations.push({age:ageNow,value:val,index:y});
+        annotations.push({index:y,value:val});
       }
     }
   }
@@ -2794,29 +2794,23 @@ function renderROIChart(principal,monthlyContribution,workYears,currentAge,retir
         ctx.save();
         ctx.font='bold 11px sans-serif';
         ctx.textAlign='center';
-        annotations.forEach(a=>{
-          let point=null;
+        annotations.forEach(function(a){
+          var point=null;
           if(a.index<=workYears&&meta.data[a.index]){
             point=meta.data[a.index];
           }else if(meta2.data[a.index]){
             point=meta2.data[a.index];
           }
           if(point){
-            const x=point.x;
-            const y=point.y;
-            const label='¥'+fmt(a.value);
-            // 标注背景
-            ctx.fillStyle=a.age<retireAge?'rgba(201,168,76,.9)':'rgba(229,62,62,.85)';
-            const w=ctx.measureText(label).width+10;
-            ctx.fillRect(x-w/2,y-22,w,16);
-            // 标注文字
+            var x=point.x;
+            var y=point.y;
+            var label='\u00A5'+fmt(a.value);
+            var isAccum=a.index<=workYears;
+            ctx.fillStyle=isAccum?'rgba(201,168,76,.9)':'rgba(229,62,62,.85)';
+            var w=ctx.measureText(label).width+10;
+            ctx.fillRect(x-w/2,y-14,w,16);
             ctx.fillStyle='#fff';
-            ctx.fillText(label,x,y-10);
-            // 年龄标注
-            ctx.fillStyle='#718096';
-            ctx.font='10px sans-serif';
-            ctx.fillText(a.age+'岁',x,y-26);
-            ctx.font='bold 11px sans-serif';
+            ctx.fillText(label,x,y-1);
           }
         });
         ctx.restore();
@@ -2915,7 +2909,7 @@ function renderComprehensiveReview(health,metrics,fin){
     assessment='整体财务状况良好但仍有提升空间。月结余'+sur+'（储蓄率'+s+'%），'+(risks.length>0?'需重点关注'+riskNames+'等'+risks.length+'项指标。':'')+'建议在巩固优势的同时，针对性地补齐短板，提升整体财务韧性。';
   }else if(score>=40){
     var surplusMsg=fin.surplus>0?'月结余'+sur+'。':'月度收支基本持平或入不敷出。';
-    var riskMsg2=risks.length>0?risks.length+'项指标未达� �（'+risks.map(function(r){return r.name;}).join('、')+'），':'';
+    var riskMsg2=risks.length>0?risks.length+'项指标未达   （'+risks.map(function(r){return r.name;}).join('、')+'），':'';
     assessment='整体财务状况需改善。当前月收入'+inc+'、月支出'+exp+'，'+surplusMsg+riskMsg2+'建议优先解决保障缺口和流动性问题，逐步建立健康的财务结构。';
   }else{
     var urgentMsg=fin.surplus<=0?'月度入不敷出，需立即削减非必要支出或增加收入来源。':'储蓄率仅'+s+'%，低于健康水平。';
