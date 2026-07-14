@@ -1,0 +1,3154 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>理财规划Agent · 智能财务分析与资产配置助手</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+/* ==================== 全局重置与变量 ==================== */
+:root{
+  --c-primary:#1a365d;
+  --c-primary-light:#2c5282;
+  --c-accent:#c9a84c;
+  --c-accent-light:#e6cc6e;
+  --c-bg:#f0f2f5;
+  --c-card:#ffffff;
+  --c-text:#1a202c;
+  --c-text-sec:#718096;
+  --c-border:#e2e8f0;
+  --c-success:#2f855a;
+  --c-success-bg:#f0fff4;
+  --c-warning:#d69e2e;
+  --c-warning-bg:#fffbeb;
+  --c-danger:#c53030;
+  --c-danger-bg:#fff5f5;
+  --c-info:#3182ce;
+  --radius:12px;
+  --shadow:0 1px 3px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04);
+  --shadow-lg:0 10px 25px rgba(0,0,0,.08),0 4px 10px rgba(0,0,0,.04);
+  --transition:.25s cubic-bezier(.4,0,.2,1);
+}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+html{font-size:15px}
+body{
+  font-family:'-apple-system','Segoe UI','Microsoft YaHei','PingFang SC',sans-serif;
+  background:var(--c-bg);
+  color:var(--c-text);
+  line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* ==================== 顶部头部 ==================== */
+.header{
+  background:linear-gradient(135deg,var(--c-primary) 0%,var(--c-primary-light) 100%);
+  color:#fff;
+  padding:16px 32px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  position:sticky;top:0;z-index:100;
+  box-shadow:0 2px 8px rgba(0,0,0,.12);
+}
+.header-left{display:flex;align-items:center;gap:12px}
+.header-logo{
+  width:40px;height:40px;
+  background:var(--c-accent);
+  border-radius:10px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:20px;font-weight:700;
+  color:var(--c-primary);
+}
+.header-title{font-size:18px;font-weight:700;letter-spacing:.5px}
+.header-sub{font-size:12px;opacity:.7;margin-top:2px}
+.header-right{display:flex;gap:8px;align-items:center}
+.header-badge{
+  background:rgba(255,255,255,.15);
+  padding:4px 12px;border-radius:20px;
+  font-size:12px;
+}
+
+/* ==================== 主布局 ==================== */
+.layout{display:flex;min-height:calc(100vh - 65px)}
+
+/* ---- 左侧导航 ---- */
+.sidebar{
+  width:200px;
+  background:var(--c-card);
+  border-right:1px solid var(--c-border);
+  padding:20px 0;
+  flex-shrink:0;
+  position:sticky;top:65px;
+  height:calc(100vh - 65px);
+  overflow-y:auto;
+}
+.nav-step{
+  display:flex;align-items:center;gap:10px;
+  padding:12px 20px;
+  cursor:pointer;
+  transition:var(--transition);
+  border-left:3px solid transparent;
+  color:var(--c-text-sec);
+  font-size:14px;
+}
+.nav-step:hover{background:var(--c-bg);color:var(--c-text)}
+.nav-step.active{
+  background:linear(90deg,var(--c-bg),transparent);
+  border-left-color:var(--c-accent);
+  color:var(--c-primary);
+  font-weight:600;
+}
+.nav-step.done{color:var(--c-success)}
+.nav-num{
+  width:24px;height:24px;border-radius:50%;
+  background:var(--c-border);
+  display:flex;align-items:center;justify-content:center;
+  font-size:12px;font-weight:700;
+  flex-shrink:0;transition:var(--transition);
+}
+.nav-step.active .nav-num{background:var(--c-accent);color:var(--c-primary)}
+.nav-step.done .nav-num{background:var(--c-success);color:#fff}
+
+/* ---- 主内容区 ---- */
+.main{
+  flex:1;
+  padding:24px 32px;
+  max-width:1100px;
+  overflow-x:hidden;
+}
+.step-content{display:none;animation:fadeIn .35s ease}
+.step-content.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* ==================== 卡片 ==================== */
+.card{
+  background:var(--c-card);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  margin-bottom:20px;
+  overflow:hidden;
+}
+.card-header{
+  padding:16px 24px;
+  border-bottom:1px solid var(--c-border);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.card-title{font-size:16px;font-weight:700;color:var(--c-primary)}
+.card-icon{font-size:18px;margin-right:8px}
+.card-body{padding:20px 24px}
+
+/* ==================== 表单元素 ==================== */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.form-grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+.form-group{display:flex;flex-direction:column;gap:6px}
+.form-group.full{grid-column:1/-1}
+.form-label{font-size:13px;color:var(--c-text-sec);font-weight:500}
+.form-label .req{color:var(--c-danger);margin-left:2px}
+.form-input,.form-select{
+  padding:9px 12px;
+  border:1.5px solid var(--c-border);
+  border-radius:8px;
+  font-size:14px;
+  color:var(--c-text);
+  background:#fff;
+  transition:var(--transition);
+  outline:none;
+  width:100%;
+}
+.form-input:focus,.form-select:focus{
+  border-color:var(--c-accent);
+  box-shadow:0 0 0 3px rgba(201,168,76,.15);
+}
+.form-input::placeholder{color:#cbd5e0}
+.form-hint{font-size:11px;color:var(--c-text-sec)}
+.form-suffix{display:flex;align-items:center;gap:6px}
+.form-suffix .form-input{flex:1}
+.form-unit{
+  font-size:13px;color:var(--c-text-sec);
+  white-space:nowrap;
+  background:var(--c-bg);
+  padding:9px 10px;
+  border-radius:8px;
+}
+
+/* ---- 风险偏好选择 ---- */
+.risk-options{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.risk-card{
+  border:2px solid var(--c-border);
+  border-radius:10px;
+  padding:16px;
+  cursor:pointer;
+  transition:var(--transition);
+  text-align:center;
+}
+.risk-card:hover{border-color:var(--c-accent-light);background:#fffdf5}
+.risk-card.selected{border-color:var(--c-accent);background:#fffdf5}
+.risk-icon{font-size:24px;margin-bottom:8px}
+.risk-name{font-size:14px;font-weight:600}
+.risk-desc{font-size:11px;color:var(--c-text-sec);margin-top:4px}
+
+/* ---- 动态列表项 ---- */
+.line-item{
+  display:grid;
+  grid-template-columns:1fr 120px 32px;
+  gap:8px;
+  align-items:center;
+  margin-bottom:8px;
+}
+.line-item .form-input{padding:7px 10px;font-size:13px}
+.btn-remove{
+  width:28px;height:28px;
+  border:none;background:var(--c-danger-bg);
+  color:var(--c-danger);
+  border-radius:6px;cursor:pointer;
+  font-size:16px;
+  display:flex;align-items:center;justify-content:center;
+  transition:var(--transition);
+}
+.btn-remove:hover{background:var(--c-danger);color:#fff}
+.btn-add{
+  padding:7px 14px;
+  border:1.5px dashed var(--c-border);
+  background:transparent;
+  border-radius:8px;
+  color:var(--c-text-sec);
+  font-size:13px;
+  cursor:pointer;
+  transition:var(--transition);
+  margin-top:4px;
+}
+.btn-add:hover{border-color:var(--c-accent);color:var(--c-accent)}
+
+/* ==================== 按钮 ==================== */
+.btn{
+  padding:10px 24px;
+  border:none;border-radius:8px;
+  font-size:14px;font-weight:600;
+  cursor:pointer;transition:var(--transition);
+  display:inline-flex;align-items:center;gap:6px;
+}
+.btn-primary{background:var(--c-primary);color:#fff}
+.btn-primary:hover{background:var(--c-primary-light);transform:translateY(-1px);box-shadow:var(--shadow-lg)}
+.btn-accent{background:var(--c-accent);color:var(--c-primary)}
+.btn-accent:hover{background:var(--c-accent-light);transform:translateY(-1px)}
+.btn-ghost{background:transparent;color:var(--c-text-sec);border:1.5px solid var(--c-border)}
+.btn-ghost:hover{border-color:var(--c-primary);color:var(--c-primary)}
+.btn-row{display:flex;justify-content:space-between;margin-top:24px}
+
+/* ==================== 汇总栏 ==================== */
+.summary-bar{
+  background:var(--c-primary);
+  color:#fff;
+  border-radius:var(--radius);
+  padding:14px 24px;
+  display:flex;
+  justify-content:space-around;
+  margin-bottom:20px;
+  flex-wrap:wrap;gap:8px;
+}
+.summary-item{text-align:center}
+.summary-label{font-size:11px;opacity:.7}
+.summary-value{font-size:18px;font-weight:700;margin-top:2px}
+.summary-value.positive{color:#9ae6b4}
+.summary-value.negative{color:#fed7d7}
+
+/* ==================== 财务健康诊断 ==================== */
+.health-score-wrap{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:20px 0;
+}
+.health-gauge{
+  position:relative;
+  width:200px;height:120px;
+  overflow:hidden;
+}
+.health-gauge svg{width:100%;height:100%}
+.health-score-num{
+  position:absolute;
+  bottom:0;left:50%;
+  transform:translateX(-50%);
+  text-align:center;
+}
+.health-score-val{font-size:36px;font-weight:800;color:var(--c-primary)}
+.health-score-label{font-size:12px;color:var(--c-text-sec)}
+
+.health-grade{
+  display:inline-block;
+  padding:4px 16px;
+  border-radius:20px;
+  font-size:14px;font-weight:700;
+  margin-left:8px;
+}
+.grade-A{background:var(--c-success-bg);color:var(--c-success)}
+.grade-B{background:var(--c-success-bg);color:var(--c-info)}
+.grade-C{background:var(--c-warning-bg);color:var(--c-warning)}
+.grade-D{background:var(--c-danger-bg);color:var(--c-danger)}
+
+/* ---- 诊断维度卡片 ---- */
+.diag-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+}
+.diag-card{
+  border:1.5px solid var(--c-border);
+  border-radius:10px;
+  padding:14px 16px;
+  transition:var(--transition);
+}
+.diag-card.good{border-color:var(--c-success);background:var(--c-success-bg)}
+.diag-card.warn{border-color:var(--c-warning);background:var(--c-warning-bg)}
+.diag-card.bad{border-color:var(--c-danger);background:var(--c-danger-bg)}
+.diag-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.diag-name{font-size:14px;font-weight:600}
+.diag-light{
+  width:10px;height:10px;border-radius:50%;
+}
+.diag-light.good{background:var(--c-success);box-shadow:0 0 6px var(--c-success)}
+.diag-light.warn{background:var(--c-warning);box-shadow:0 0 6px var(--c-warning)}
+.diag-light.bad{background:var(--c-danger);box-shadow:0 0 6px var(--c-danger)}
+.diag-value{font-size:22px;font-weight:700;margin:4px 0}
+.diag-desc{font-size:12px;color:var(--c-text-sec)}
+.diag-benchmark{font-size:11px;color:var(--c-text-sec);margin-top:4px;font-style:italic}
+
+/* ==================== 图表容器 ==================== */
+.chart-wrap{position:relative;height:260px}
+.chart-wrap-lg{position:relative;height:340px}
+.chart-row{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+
+/* ==================== 指标卡 ==================== */
+.metric-row{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:12px;
+  margin-bottom:20px;
+}
+.metric-card{
+  background:var(--c-card);
+  border-radius:10px;
+  padding:14px 16px;
+  box-shadow:var(--shadow);
+  border-top:3px solid var(--c-accent);
+}
+.metric-label{font-size:11px;color:var(--c-text-sec);text-transform:uppercase;letter-spacing:.5px}
+.metric-value{font-size:20px;font-weight:700;color:var(--c-primary);margin-top:4px}
+.metric-trend{font-size:11px;margin-top:2px}
+.metric-trend.up{color:var(--c-success)}
+.metric-trend.down{color:var(--c-danger)}
+
+/* ==================== 建议列表 ==================== */
+.advice-item{
+  display:flex;gap:12px;
+  padding:14px 0;
+  border-bottom:1px solid var(--c-border);
+}
+.advice-item:last-child{border-bottom:none}
+.advice-icon{
+  width:32px;height:32px;
+  border-radius:8px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:16px;
+  flex-shrink:0;
+}
+.advice-icon.priority-high{background:var(--c-danger-bg);color:var(--c-danger)}
+.advice-icon.priority-mid{background:var(--c-warning-bg);color:var(--c-warning)}
+.advice-icon.priority-low{background:var(--c-info-bg,#ebf8ff);color:var(--c-info)}
+.advice-icon.priority-done{background:var(--c-success-bg);color:var(--c-success)}
+.advice-title{font-size:14px;font-weight:600;margin-bottom:2px}
+.advice-text{font-size:13px;color:var(--c-text-sec)}
+.advice-tag{
+  display:inline-block;
+  font-size:10px;padding:2px 8px;border-radius:10px;
+  background:var(--c-bg);color:var(--c-text-sec);
+  margin-right:4px;
+}
+
+/* ==================== 资产配置表 ==================== */
+.alloc-table{width:100%;border-collapse:collapse;font-size:13px}
+.alloc-table th{
+  text-align:left;padding:8px 12px;
+  background:var(--c-bg);color:var(--c-text-sec);
+  font-weight:600;font-size:12px;
+  border-bottom:2px solid var(--c-border);
+}
+.alloc-table td{padding:8px 12px;border-bottom:1px solid var(--c-border)}
+.alloc-table tr:hover td{background:#fffdf5}
+.alloc-bar{
+  height:6px;border-radius:3px;
+  background:var(--c-border);
+  overflow:hidden;display:inline-block;width:60px;vertical-align:middle;
+}
+.alloc-bar-fill{height:100%;border-radius:3px}
+
+/* ==================== 目标卡 ==================== */
+.goal-card{
+  border:1.5px solid var(--c-border);
+  border-radius:10px;
+  padding:16px;
+  margin-bottom:12px;
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px 12px;
+  align-items:end;
+  position:relative;
+}
+.goal-card.short{border-left:3px solid var(--c-info)}
+.goal-card.mid{border-left:3px solid var(--c-accent)}
+.goal-card.long{border-left:3px solid var(--c-primary)}
+
+/* ==================== Toast ==================== */
+.toast{
+  position:fixed;bottom:24px;right:24px;
+  background:var(--c-primary);color:#fff;
+  padding:12px 20px;border-radius:8px;
+  font-size:14px;box-shadow:var(--shadow-lg);
+  z-index:1000;
+  transform:translateY(100px);opacity:0;
+  transition:var(--transition);
+}
+.toast.show{transform:translateY(0);opacity:1}
+
+.mobile-menu-btn{display:none;background:none;border:none;color:#fff;font-size:22px;cursor:pointer;padding:4px 8px;line-height:1}
+
+/* ==================== 响应式 ==================== */
+
+/* 平板 (≤1024px) */
+@media(max-width:1024px){
+  .main{padding:20px 24px;max-width:100%}
+  .chart-row{grid-template-columns:1fr}
+  .goal-card{grid-template-columns:1fr 1fr}
+  .metric-row{grid-template-columns:repeat(2,1fr)}
+}
+
+/* 手机 (≤768px) */
+@media(max-width:768px){
+  /* 顶部栏 */
+  .header{padding:12px 16px}
+  .header-title{font-size:15px}
+  .header-sub{display:none}
+  .header-badge{font-size:10px;padding:4px 10px}
+  .mobile-menu-btn{display:block}
+  
+  /* 侧边栏隐藏 */
+  .sidebar{display:none!important}
+  .main{margin-left:0!important;padding:12px;max-width:100%}
+  
+  /* 布局 */
+  .layout{min-height:auto}
+  .form-grid,.form-grid-3,.chart-row,.metric-row,.diag-grid{grid-template-columns:1fr}
+  .risk-options{grid-template-columns:1fr}
+  .goal-card{grid-template-columns:1fr;gap:4px}
+  .btn-row{flex-wrap:wrap;gap:8px}
+  .btn-row .btn{flex:1;min-width:0;justify-content:center;font-size:13px;padding:10px 12px}
+  
+  /* 卡片 */
+  .card-header{padding:12px 14px}
+  .card-body{padding:12px 14px}
+  .card-title{font-size:14px}
+  .card{margin-bottom:12px}
+  
+  /* 表格 - 水平滚动 */
+  .alloc-table{font-size:11px}
+  .alloc-table th,.alloc-table td{padding:6px 8px}
+  .card-body{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  
+  /* 表单元素加大触控区域 */
+  .form-input,.form-select{padding:10px 12px;font-size:16px}
+  .line-item{grid-template-columns:1fr 90px 28px;gap:6px}
+  .form-unit{padding:10px 8px}
+  
+  /* 汇总栏 */
+  .summary-bar{padding:10px 12px;gap:6px}
+  .summary-value{font-size:15px}
+  .summary-label{font-size:10px}
+  
+  /* 图表 */
+  .chart-wrap{height:220px}
+  .chart-wrap-lg{height:280px}
+  
+  /* Toast */
+  .toast{bottom:12px;right:12px;left:12px;text-align:center;font-size:13px}
+  
+  /* 打印时忽略移动端样式 */
+  @media print{
+    .mobile-menu-btn,.mobile-nav-overlay,.mobile-nav-panel{display:none!important}
+    .sidebar{display:block!important}
+    .main{margin-left:0!important;padding:0!important}
+  }
+}
+
+/* 小屏手机 (≤480px) */
+@media(max-width:480px){
+  html{font-size:14px}
+  .header-logo{width:32px;height:32px;font-size:16px}
+  .risk-card{padding:12px}
+  .goal-card{grid-template-columns:1fr}
+  .line-item{grid-template-columns:1fr 70px 28px}
+  .summary-bar{flex-direction:column;text-align:center}
+}
+
+/* ==================== 移动端导航面板 ==================== */
+.mobile-nav-overlay{
+  display:none;position:fixed;top:0;left:0;width:100%;height:100%;
+  background:rgba(0,0,0,.4);z-index:200;
+  opacity:0;transition:opacity .25s;
+}
+.mobile-nav-overlay.active{display:block;opacity:1}
+.mobile-nav-panel{
+  display:none;position:fixed;top:0;left:0;width:280px;height:100%;
+  background:var(--c-card);z-index:201;
+  transform:translateX(-100%);transition:transform .25s;
+  overflow-y:auto;padding:0;box-shadow:2px 0 12px rgba(0,0,0,.1);
+}
+.mobile-nav-panel.active{display:block;transform:translateX(0)}
+.mobile-nav-header{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:16px 20px;border-bottom:1px solid var(--c-border);
+  font-size:15px;
+}
+.mobile-nav-panel .nav-step{padding:14px 20px}
+
+/* ==================== 打印样式 ==================== */
+@media print{
+  .sidebar,.btn-row,.nav-badge,.toast,.btn-add,.btn-remove,button{display:none!important}
+  .main{margin-left:0!important;padding:0!important;width:100%!important}
+  .step-content{display:block!important;opacity:1!important;position:static!important}
+  .step-content:not(.active){display:none!important}
+  .card{box-shadow:none!important;border:1px solid #ddd!important;break-inside:avoid;margin-bottom:12px!important}
+  .card-header{background:#f5f5f5!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .summary-bar{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  canvas{max-width:100%!important;height:auto!important}
+  body{font-size:12px;color:#000}
+  @page{margin:12mm}
+}
+</style>
+</head>
+<body>
+
+<!-- ==================== 顶部头部 ==================== -->
+<div class="header">
+  <div class="header-left">
+    <div class="header-logo">¥</div>
+    <div>
+      <div class="header-title">理财规划Agent</div>
+      <div class="header-sub">智能财务分析 · 全天候资产配置 · 人生规划</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <button class="mobile-menu-btn" onclick="toggleMobileNav()" aria-label="菜单">☰</button>
+    <span class="header-badge" id="navBadge">步骤 1 / 7</span>
+  </div>
+</div>
+
+<div class="layout">
+  <!-- ==================== 左侧导航 ==================== -->
+  <div class="sidebar">
+    <div class="nav-step active" onclick="goStep(1)">
+      <div class="nav-num">1</div><span>基本信息</span>
+    </div>
+    <div class="nav-step" onclick="goStep(2)">
+      <div class="nav-num">2</div><span>收支数据</span>
+    </div>
+    <div class="nav-step" onclick="goStep(3)">
+      <div class="nav-num">3</div><span>资产负债</span>
+    </div>
+    <div class="nav-step" onclick="goStep(4)">
+      <div class="nav-num">4</div><span>保单规划</span>
+    </div>
+    <div class="nav-step" onclick="goStep(5)">
+      <div class="nav-num">5</div><span>人生规划</span>
+    </div>
+    <div class="nav-step" onclick="goStep(6)">
+      <div class="nav-num">6</div><span>分析报告</span>
+    </div>
+    <div class="nav-step" onclick="goStep(7)">
+      <div class="nav-num">7</div><span>投资理念</span>
+    </div>
+  </div>
+
+  <!-- ==================== 主内容区 ==================== -->
+  <div class="main">
+
+    <!-- ============ Step 1: 基本信息 ============ -->
+    <div class="step-content active" id="step1">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title"><span class="card-icon">📋</span>客户基本信息</span>
+        </div>
+        <div class="card-body">
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label">姓名<span class="req">*</span></label>
+              <input class="form-input" id="clientName" placeholder="请输入客户姓名" value="">
+            </div>
+            <div class="form-group">
+              <label class="form-label">年龄<span class="req">*</span></label>
+              <input class="form-input" id="clientAge" type="number" min="18" max="80" placeholder="如：35" value="35">
+            </div>
+            <div class="form-group">
+              <label class="form-label">预期退休年龄</label>
+              <input class="form-input" id="retireAge" type="number" min="18" max="80" placeholder="如：60" value="60">
+            </div>
+            <div class="form-group">
+              <label class="form-label">家庭成员数</label>
+              <input class="form-input" id="familySize" type="number" min="1" placeholder="如：3" value="3">
+            </div>
+            <div class="form-group full">
+              <label class="form-label">风险偏好<span class="req">*</span></label>
+              <div class="risk-options" id="riskOptions">
+                <div class="risk-card" data-risk="conservative" onclick="selectRisk(this)">
+                  <div class="risk-icon">🛡️</div>
+                  <div class="risk-name">保守型</div>
+                  <div class="risk-desc">追求本金安全<br>可接受年化 1-3%</div>
+                </div>
+                <div class="risk-card selected" data-risk="balanced" onclick="selectRisk(this)">
+                  <div class="risk-icon">⚖️</div>
+                  <div class="risk-name">平衡型</div>
+                  <div class="risk-desc">兼顾收益与风险<br>可接受年化 2-5%</div>
+                </div>
+                <div class="risk-card" data-risk="aggressive" onclick="selectRisk(this)">
+                  <div class="risk-icon">🚀</div>
+                  <div class="risk-name">进取型</div>
+                  <div class="risk-desc">追求高增长<br>可接受年化 5-8% 波动</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="btn-row">
+        <span></span>
+        <button class="btn btn-primary" onclick="goStep(2)">下一步：收支数据 →</button>
+      </div>
+    </div>
+
+    <!-- ============ Step 2: 收支数据 ============ -->
+    <div class="step-content" id="step2">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title"><span class="card-icon">💰</span>月度收入</span>
+          <button class="btn-add" onclick="addLineItem('incomeList')">+ 添加收入项</button>
+        </div>
+        <div class="card-body">
+          <div id="incomeList">
+            <div class="line-item">
+              <input class="form-input" placeholder="收入项目名称" value="税后工资" oninput="calcIncome()">
+              <div class="form-suffix">
+                <input class="form-input" type="number" min="0" placeholder="金额" value="20000" oninput="if(this.value<0)this.value=0;calcIncome()">
+                <span class="form-unit">元/月</span>
+              </div>
+              <button class="btn-remove" onclick="removeLineItem(this);calcIncome()">×</button>
+            </div>
+            <div class="line-item">
+              <input class="form-input" placeholder="收入项目名称" value="副业/兼职" oninput="calcIncome()">
+              <div class="form-suffix">
+                <input class="form-input" type="number" min="0" placeholder="金额" value="5000" oninput="if(this.value<0)this.value=0;calcIncome()">
+                <span class="form-unit">元/月</span>
+              </div>
+              <button class="btn-remove" onclick="removeLineItem(this);calcIncome()">×</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title"><span class="card-icon">💳</span>月度支出</span>
+          <button class="btn-add" onclick="addLineItem('expenseList')">+ 添加支出项</button>
+        </div>
+        <div class="card-body">
+          <div id="expenseList">
+            <div class="line-item">
+              <input class="form-input" placeholder="支出项目名称" value="日常生活" oninput="calcExpense()">
+              <div class="form-suffix">
+                <input class="form-input" type="number" min="0" placeholder="金额" value="5000" oninput="if(this.value<0)this.value=0;calcExpense()">
+                <span class="form-unit">元/月</span>
+              </div>
+              <button class="btn-remove" onclick="removeLineItem(this);calcExpense()">×</button>
+            </div>
+            <div class="line-item">
+              <input class="form-input" placeholder="支出项目名称" value="房贷/房租" oninput="calcExpense()">
+              <div class="form-suffix">
+                <input class="form-input" type="number" min="0" placeholder="金额" value="8000" oninput="if(this.value<0)this.value=0;calcExpense()">
+                <span class="form-unit">元/月</span>
+              </div>
+              <button class="btn-remove" onclick="removeLineItem(this);calcExpense()">×</button>
+            </div>
+            <div class="line-item">
+              <input class="form-input" placeholder="支出项目名称" value="育儿/赡养" oninput="calcExpense()">
+              <div class="form-suffix">
+                <input class="form-input" type="number" min="0" placeholder="金额" value="3000" oninput="if(this.value<0)this.value=0;calcExpense()">
+                <span class="form-unit">元/月</span>
+              </div>
+              <button class="btn-remove" onclick="removeLineItem(this);calcExpense()">×</button>
+            </div>
+            <div class="line-item">
+              <input class="form-input" placeholder="支出项目名称" value="娱乐进修" oninput="calcExpense()">
+              <div class="form-suffix">
+                <input class="form-input" type="number" min="0" placeholder="金额" value="1500" oninput="if(this.value<0)this.value=0;calcExpense()">
+                <span class="form-unit">元/月</span>
+              </div>
+              <button class="btn-remove" onclick="removeLineItem(this);calcExpense()">×</button>
+            </div>
+            <div class="line-item">
+              <input class="form-input" placeholder="支出项目名称" value="保障型保险支出" oninput="calcExpense()">
+              <div class="form-suffix">
+                <input class="form-input" type="number" min="0" placeholder="金额" value="1200" oninput="if(this.value<0)this.value=0;calcExpense()">
+                <span class="form-unit">元/月</span>
+              </div>
+              <button class="btn-remove" onclick="removeLineItem(this);calcExpense()">×</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="summary-bar" id="incomeSummary">
+        <div class="summary-item"><div class="summary-label">月总收入</div><div class="summary-value positive" id="totalIncome">¥0</div></div>
+        <div class="summary-item"><div class="summary-label">月总支出</div><div class="summary-value negative" id="totalExpense">¥0</div></div>
+        <div class="summary-item"><div class="summary-label">月结余</div><div class="summary-value positive" id="monthlySurplus">¥0</div></div>
+        <div class="summary-item"><div class="summary-label">储蓄率</div><div class="summary-value" id="savingsRate">0%</div></div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-ghost" onclick="goStep(1)">← 上一步</button>
+        <button class="btn btn-primary" onclick="goStep(3)">下一步：资产负债 →</button>
+      </div>
+    </div>
+
+    <!-- ============ Step 3: 资产负债 ============ -->
+    <div class="step-content" id="step3">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title"><span class="card-icon">🏦</span>资产明细</span>
+          <button class="btn-add" onclick="addAssetItem()">+ 添加资产</button>
+        </div>
+        <div class="card-body">
+          <div id="assetList">
+            <div class="line-item">
+              <select class="form-input asset-cat" onchange="calcAssets()" style="font-size:13px">
+                <option value="self" selected>自住房产</option>
+                <option value="invest">投资性房产</option>
+                <option value="liquid">活期存款/货币基金</option>
+                <option value="invest">股票/基金/投资</option>
+                <option value="invest">理财型保险</option>
+                <option value="invest">黄金/大宗商品</option>
+                <option value="other">其他(公积金/出借/等)</option>
+              </select>
+              <div class="form-suffix">
+                <input class="form-input asset-val" type="number" min="0" placeholder="金额" value="3000000" oninput="if(this.value<0)this.value=0;calcAssets()">
+                <span class="form-unit">元</span>
+              </div>
+              <button class="btn-remove" onclick="removeLineItem(this);calcAssets()">×</button>
+            </div>
+            <div class="line-item">
+              <select class="form-input asset-cat" onchange="calcAssets()" style="font-size:13px">
+                <option value="self">自住房产</option>
+                <option value="invest" selected>投资性房产</option>
+                <option value="liquid">活期存款/货币基金</option>
+                <option value="invest">股票/基金/投资</option>
+                <option value="invest">理财型保险</option>
+                <option value="invest">黄金/大宗商品</option>
+                <option value="other">其他(公积金/出借/等)</option>
+              </select>
+              <div class="form-suffix">
+                <input class="form-input asset-val" type="number" min="0" placeholder="金额" value="500000" oninput="if(this.value<0)this.value=0;calcAssets()">
+                <span class="form-unit">元</span>
+              </div>
+              <button class="btn-remove" onclick="removeLineItem(this);calcAssets()">×</button>
+            </div>
+            <div class="line-item">
+              <select class="form-input asset-cat" onchange="calcAssets()" style="font-size:13px">
+                <option value="self">自住房产</option>
+                <option value="invest">投资性房产</option>
+                <option value="liquid" selected>活期存款/货币基金</option>
+                <option value="invest">股票/基金/投资</option>
+                <option value="invest">理财型保险</option>
+                <option value="invest">黄金/大宗商品</option>
+                <option value="other">其他(公积金/出借/等)</option>
+              </select>
+              <div class="form-suffix">
+                <input class="form-input asset-val" type="number" min="0" placeholder="金额" value="100000" oninput="if(this.value<0)this.value=0;calcAssets()">
+                <span class="form-unit">元</span>
+              </div>
+              <button class="btn-remove" onclick="removeLineItem(this);calcAssets()">×</button>
+            </div>
+            <div class="line-item">
+              <select class="form-input asset-cat" onchange="calcAssets()" style="font-size:13px">
+                <option value="self">自住房产</option>
+                <option value="invest">投资性房产</option>
+                <option value="liquid">活期存款/货币基金</option>
+                <option value="invest" selected>股票/基金/投资</option>
+                <option value="invest">理财型保险</option>
+                <option value="invest">黄金/大宗商品</option>
+                <option value="other">其他(公积金/出借/等)</option>
+              </select>
+              <div class="form-suffix">
+                <input class="form-input asset-val" type="number" min="0" placeholder="金额" value="200000" oninput="if(this.value<0)this.value=0;calcAssets()">
+                <span class="form-unit">元</span>
+              </div>
+              <button class="btn-remove" onclick="removeLineItem(this);calcAssets()">×</button>
+            </div>
+            <div class="line-item">
+              <select class="form-input asset-cat" onchange="calcAssets()" style="font-size:13px">
+                <option value="self">自住房产</option>
+                <option value="invest">投资性房产</option>
+                <option value="liquid">活期存款/货币基金</option>
+                <option value="invest">股票/基金/投资</option>
+                <option value="invest" selected>理财型保险</option>
+                <option value="invest">黄金/大宗商品</option>
+                <option value="other">其他(公积金/出借/等)</option>
+              </select>
+              <div class="form-suffix">
+                <input class="form-input asset-val" type="number" min="0" placeholder="金额" value="150000" oninput="if(this.value<0)this.value=0;calcAssets()">
+                <span class="form-unit">元</span>
+              </div>
+              <button class="btn-remove" onclick="removeLineItem(this);calcAssets()">×</button>
+            </div>
+            <div class="line-item">
+              <select class="form-input asset-cat" onchange="calcAssets()" style="font-size:13px">
+                <option value="self">自住房产</option>
+                <option value="invest">投资性房产</option>
+                <option value="liquid">活期存款/货币基金</option>
+                <option value="invest">股票/基金/投资</option>
+                <option value="invest">理财型保险</option>
+                <option value="invest" selected>黄金/大宗商品</option>
+                <option value="other">其他(公积金/出借/等)</option>
+              </select>
+              <div class="form-suffix">
+                <input class="form-input asset-val" type="number" min="0" placeholder="金额" value="50000" oninput="if(this.value<0)this.value=0;calcAssets()">
+                <span class="form-unit">元</span>
+              </div>
+              <button class="btn-remove" onclick="removeLineItem(this);calcAssets()">×</button>
+            </div>
+            <div class="line-item">
+              <select class="form-input asset-cat" onchange="calcAssets()" style="font-size:13px">
+                <option value="self">自住房产</option>
+                <option value="invest">投资性房产</option>
+                <option value="liquid">活期存款/货币基金</option>
+                <option value="invest">股票/基金/投资</option>
+                <option value="invest">理财型保险</option>
+                <option value="invest">黄金/大宗商品</option>
+                <option value="other" selected>其他(公积金/出借/等)</option>
+              </select>
+              <div class="form-suffix">
+                <input class="form-input asset-val" type="number" min="0" placeholder="金额" value="0" oninput="if(this.value<0)this.value=0;calcAssets()">
+                <span class="form-unit">元</span>
+              </div>
+              <button class="btn-remove" onclick="removeLineItem(this);calcAssets()">×</button>
+            </div>
+          </div>
+          <div style="margin-top:16px;padding-top:14px;border-top:1px dashed var(--c-border)">
+            <div class="form-group" style="max-width:300px">
+              <label class="form-label">每月被动收入（租金/分红/利息等）</label>
+              <div class="form-suffix">
+                <input class="form-input" id="passiveIncome" type="number" min="0" placeholder="如：2000" value="" oninput="if(this.value<0)this.value=0">
+                <span class="form-unit">元/月</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title"><span class="card-icon">📉</span>负债明细</span>
+          <button class="btn-add" onclick="addLiabilityItem()">+ 添加负债</button>
+        </div>
+        <div class="card-body">
+          <div id="liabilityList">
+            <div class="line-item">
+              <input class="form-input" placeholder="负债名称" value="房贷余额" oninput="calcLiabilities()">
+              <div class="form-suffix">
+                <input class="form-input liability-val" type="number" min="0" placeholder="金额" value="1500000" oninput="if(this.value<0)this.value=0;calcLiabilities()">
+                <span class="form-unit">元</span>
+              </div>
+              <button class="btn-remove" onclick="removeLineItem(this);calcLiabilities()">×</button>
+            </div>
+            <div class="line-item">
+              <input class="form-input" placeholder="负债名称" value="车贷余额" oninput="calcLiabilities()">
+              <div class="form-suffix">
+                <input class="form-input liability-val" type="number" min="0" placeholder="金额" value="100000" oninput="if(this.value<0)this.value=0;calcLiabilities()">
+                <span class="form-unit">元</span>
+              </div>
+              <button class="btn-remove" onclick="removeLineItem(this);calcLiabilities()">×</button>
+            </div>
+          </div>
+          <div style="margin-top:12px">
+            <div class="form-group">
+              <label class="form-label">月度还款总额（含本金+利息）</label>
+              <div class="form-suffix">
+                <input class="form-input" id="monthlyDebtPayment" type="number" min="0" placeholder="如：9000" value="9000" oninput="if(this.value<0)this.value=0;calcLiabilities()">
+                <span class="form-unit">元/月</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="summary-bar" id="assetSummary">
+        <div class="summary-item"><div class="summary-label">总资产</div><div class="summary-value positive" id="totalAssets">¥0</div></div>
+        <div class="summary-item"><div class="summary-label">总负债</div><div class="summary-value negative" id="totalLiabilities">¥0</div></div>
+        <div class="summary-item"><div class="summary-label">净资产</div><div class="summary-value positive" id="netWorth">¥0</div></div>
+        <div class="summary-item"><div class="summary-label">资产负债率</div><div class="summary-value" id="debtRatio">0%</div></div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-ghost" onclick="goStep(2)">← 上一步</button>
+        <button class="btn btn-primary" onclick="goStep(4)">下一步：保单规划 →</button>
+      </div>
+    </div>
+
+    <!-- ============ Step 4: 保单规划（按家庭成员） ============ -->
+    <div class="step-content" id="step4">
+      <!-- 家庭成员管理 -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title"><span class="card-icon">👨‍👩‍👧‍👦</span>家庭成员保单规划</span>
+          <button class="btn-add" onclick="addFamilyMember()">+ 添加家庭成员</button>
+        </div>
+        <div class="card-body" id="familyMembersList">
+          <!-- 动态生成 -->
+        </div>
+      </div>
+
+      <!-- 理财型保险（与资产明细对应） -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title"><span class="card-icon">💼</span>理财型保险（与资产明细对应）</span>
+        </div>
+        <div class="card-body">
+          <div id="wealthInsuranceDisplay"></div>
+        </div>
+      </div>
+
+      <!-- 家庭保费汇总 -->
+      <div class="summary-bar" id="premiumSummary">
+        <div class="summary-item"><div class="summary-label">家庭总建议年保费</div><div class="summary-value" id="totalPremium">¥0</div></div>
+        <div class="summary-item"><div class="summary-label">占家庭年收入</div><div class="summary-value" id="premiumRatio">0%</div></div>
+        <div class="summary-item"><div class="summary-label">保障型保费</div><div class="summary-value" id="protectionPremium">¥0</div></div>
+        <div class="summary-item"><div class="summary-label">储蓄型保费</div><div class="summary-value" id="savingsPremium">¥0</div></div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-ghost" onclick="goStep(3)">← 上一步</button>
+        <button class="btn btn-primary" onclick="goStep(5)">下一步：人生规划 →</button>
+      </div>
+    </div>
+
+    <!-- ============ Step 5: 人生规划 ============ -->
+    <div class="step-content" id="step5">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title"><span class="card-icon">🎯</span>短中长期财务目标</span>
+          <span style="font-size:10px;color:var(--c-text-sec);margin-left:4px">（可删除/增加）</span>
+          <button class="btn-add" onclick="addGoalItem()">+ 添加目标</button>
+        </div>
+        <div class="card-body">
+          <div style="font-size:12px;color:var(--c-text-sec);margin-bottom:12px">
+            💡 期限分类：短期（1-3年）· 中期（3-10年）· 长期（10年以上）
+          </div>
+          <div id="goalList">
+            <!-- 动态生成 -->
+          </div>
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-ghost" onclick="goStep(4)">← 上一步</button>
+        <button class="btn btn-accent" onclick="goStep(6)">生成分析报告 →</button>
+      </div>
+    </div>
+
+    <!-- ============ Step 6: 分析报告 ============ -->
+    <div class="step-content" id="step6">
+
+      <!-- 报告头部：客户信息 -->
+      <div id="reportHeader" style="background:linear-gradient(135deg,var(--c-primary) 0%,#2a4a7f 100%);color:#fff;border-radius:12px;padding:20px 24px;margin-bottom:16px;display:none">
+        <div style="display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:12px">
+          <div>
+            <div style="font-size:12px;opacity:0.8;margin-bottom:4px">理财规划报告</div>
+            <div style="font-size:22px;font-weight:700"><span id="reportClientName">—</span> 的财务分析报告</div>
+          </div>
+          <div style="text-align:right;font-size:12px;opacity:0.8">
+            <div>报告生成日期</div>
+            <div id="reportDate" style="font-weight:600">—</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 资产负债汇总表 + 月度收支结余表 -->
+      <div class="chart-row">
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title"><span class="card-icon">🏦</span>家庭资产负债汇总表</span>
+          </div>
+          <div class="card-body">
+            <table class="alloc-table" id="balanceSheetTable">
+              <thead>
+                <tr><th>项目</th><th>金额</th><th>占比</th></tr>
+              </thead>
+              <tbody id="balanceSheetBody"></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title"><span class="card-icon">💰</span>月度收支结余表</span>
+          </div>
+          <div class="card-body">
+            <table class="alloc-table" id="cashFlowTable">
+              <thead>
+                <tr><th>项目</th><th>月金额</th><th>年金额</th><th>占比</th></tr>
+              </thead>
+              <tbody id="cashFlowBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- 财务健康雷达（含含义与区间判断） -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title"><span class="card-icon">🎯</span>财务健康雷达</span>
+        </div>
+        <div class="card-body">
+          <div class="chart-wrap"><canvas id="radarChart"></canvas></div>
+          <div id="radarDetailTable" style="margin-top:16px"></div>
+        </div>
+      </div>
+
+      <!-- 保单额度充足性分析 -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title"><span class="card-icon">🛡️</span>保单额度充足性分析</span>
+          <span style="font-size:11px;color:var(--c-text-sec)">逐成员诊断 · 缺口一目了然</span>
+        </div>
+        <div class="card-body">
+          <div id="insuranceAdequacy"></div>
+        </div>
+      </div>
+
+      <!-- 资产配置明细表 -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title"><span class="card-icon">📋</span>配置明细与预期收益</span>
+        </div>
+        <div class="card-body">
+          <table class="alloc-table" id="allocTable">
+            <thead>
+              <tr><th>资产类别</th><th>推荐区间</th><th>当前比例</th><th>增减建议</th></tr>
+            </thead>
+            <tbody id="allocTableBody"></tbody>
+          </table>
+          <div id="allocNote" style="margin-top:10px"></div>
+        </div>
+      </div>
+
+      <!-- 资产增长预测（草帽图） -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title"><span class="card-icon">📈</span>资产增长预测（草帽图：积累→消耗）</span>
+        </div>
+        <div class="card-body">
+          <div class="chart-wrap-lg"><canvas id="roiChart"></canvas></div>
+          <div id="strawHatNote" style="margin-top:10px;font-size:11px;color:var(--c-text-sec);padding:8px 12px;background:var(--c-bg);border-radius:6px">
+            💡 <b>草帽图说明：</b>金色区域为<b>积累期</b>（当前至退休），以当前投资资产__PRINCIPAL__+月结余__SURPLUS__定投，按3.5%年化复利增长。<b>红色虚线</b>为<b>消耗期</b>（退休后），每年按月度支出__EXPENSE__从资产中扣除生活费，剩余资产继续按3.5%增长。典型草帽形态：退休时资产峰值→逐年消耗递减→至90岁。图中标注每5年末的资产总额。
+          </div>
+        </div>
+      </div>
+
+      <!-- 目标达成分析 -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title"><span class="card-icon">🎯</span>目标达成可行性分析</span>
+        </div>
+        <div class="card-body">
+          <table class="alloc-table" id="goalTable">
+            <thead>
+              <tr><th>目标</th><th>期限</th><th>目标金额</th><th>所需月投</th><th>现值需求</th><th>可用本金</th><th>达成概率</th><th>状态</th></tr>
+            </thead>
+            <tbody id="goalTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 理财规划综合点评 -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title"><span class="card-icon">📋</span>理财规划综合点评</span>
+          <span style="font-size:11px;color:var(--c-text-sec)">基于全量数据的综合诊断与建议</span>
+        </div>
+        <div class="card-body">
+          <div id="comprehensiveReview"></div>
+        </div>
+      </div>
+
+      <!-- 投资理念跳转提示 -->
+      <div class="card" style="background:linear-gradient(135deg,#fffbeb 0%,#fffdf5 100%);border:2px dashed var(--c-accent);cursor:pointer" onclick="goStep(7)">
+        <div class="card-body" style="text-align:center;padding:32px 24px">
+          <div style="font-size:32px;margin-bottom:10px">🌍</div>
+          <div style="font-size:17px;font-weight:700;color:var(--c-primary);margin-bottom:4px">全天候投资理念与再平衡策略</div>
+          <div style="font-size:13px;color:var(--c-text-sec);margin-bottom:16px">源自瑞·达里欧 · 结合美林时钟 —— 理财理念科普专题</div>
+          <button class="btn btn-accent" style="font-size:14px;padding:8px 28px">📖 点击查看投资理念科普 →</button>
+        </div>
+      </div>
+
+      <!-- 免责声明 -->
+      <div style="text-align:center;padding:12px 16px;margin-bottom:4px">
+        <span style="font-size:11px;color:var(--c-text-sec);line-height:1.6">
+          ⚠ 免责声明：本报告由AI Agent自动生成，所有分析结果及建议仅供参考，不构成任何投资、保险或法律建议。
+          金融市场存在风险，过往表现不代表未来收益。请您在做出任何财务决策前，咨询持牌专业人士。
+        </span>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-ghost" onclick="goStep(5)">← 修改规划</button>
+        <button class="btn btn-ghost" onclick="window.print()">打印报告</button>
+        <button class="btn btn-accent" onclick="generateReport()">🔄 重新分析</button>
+      </div>
+    </div>
+
+    <!-- ============ Step 7: 全天候投资理念科普 ============ -->
+    <div class="step-content" id="step7">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title"><span class="card-icon">🌍</span>全天候投资理念与再平衡策略</span>
+          <span style="font-size:11px;color:var(--c-text-sec)">源自瑞·达里欧 · 结合美林时钟 · 理财科普</span>
+        </div>
+        <div class="card-body">
+          <div id="allWeatherPhilosophy"></div>
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-ghost" onclick="goStep(6)">← 返回分析报告</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ====================================================================
+   理财规划Agent · 核心金融公式引擎
+   ==================================================================== */
+const Engine = {
+
+  /* ---- 基础计算 ---- */
+  sum(arr){return arr.reduce((a,b)=>a+(b||0),0)},
+
+  /* ---- 储蓄率 ----
+     公式: 储蓄率 = 月结余 / 月收入 × 100%
+     标准: ≥30%优秀, 20-30%良好, 10-20%一般, <10%需改善 */
+  savingsRate(income,expense){
+    if(!income||income<=0) return 0;
+    return ((income-expense)/income)*100;
+  },
+
+  /* ---- 负债收入比 ----
+     公式: 负债收入比 = 月还款额 / 月收入 × 100%
+     标准: <36%安全, 36-50%警戒, >50%危险 */
+  debtToIncome(debtPay,income){
+    if(!income||income<=0) return 0;
+    return (debtPay/income)*100;
+  },
+
+  /* ---- 流动性比率 ----
+     公式: 流动性比率 = 流动资产 / 月支出
+     标准: 3-6个月为理想区间 */
+  liquidityRatio(liquidAssets,monthlyExpense){
+    if(!monthlyExpense||monthlyExpense<=0) return 0;
+    return liquidAssets/monthlyExpense;
+  },
+
+  /* ---- 资产负债率 ----
+     公式: 资产负债率 = 总负债 / 总资产 × 100%
+     标准: <50%健康, 50-70%警戒, >70%危险 */
+  assetLiabilityRatio(totalLiab,totalAssets){
+    if(!totalAssets||totalAssets<=0) return 0;
+    return (totalLiab/totalAssets)*100;
+  },
+
+  /* ---- 投资资产占比 ----
+     公式: 投资资产占比 = 投资资产 / 总资产 × 100%
+     标准: ≥50%为健康 */
+  investmentRatio(invAssets,totalAssets){
+    if(!totalAssets||totalAssets<=0) return 0;
+    return (invAssets/totalAssets)*100;
+  },
+
+  /* ---- 净资产/年收入比 ----
+     公式: 净资产 / (月收入 × 12)
+     标准: ≥2为健康, ≥1为及格 */
+  netAssetToIncome(netWorth,monthlyIncome){
+    if(!monthlyIncome||monthlyIncome<=0) return 0;
+    return netWorth/(monthlyIncome*12);
+  },
+
+  /* ---- 财务自由度 ----
+     公式: 财务自由度 = 被动收入 / 月支出 × 100%
+     标准: 100% = 财务自由 */
+  financialFreedom(passiveIncome,monthlyExpense){
+    if(!monthlyExpense||monthlyExpense<=0) return 0;
+    return (passiveIncome/monthlyExpense)*100;
+  },
+
+  /* ---- 清偿比率 ----
+     公式: 净资产/总资产, 标准: 0.6-0.7 */
+  solvencyRatio(netWorth,totalAssets){
+    if(!totalAssets||totalAssets<=0) return 0;
+    return netWorth/totalAssets;
+  },
+
+  /* ---- 净储蓄率 ----
+     公式: (总收入-总支出)/总收入, 标准: >25% */
+  netSavingsRate(income,expense,liquidIncome){
+    const totalIncome=income+(liquidIncome||0);
+    if(!totalIncome||totalIncome<=0) return 0;
+    return ((totalIncome-expense)/totalIncome)*100;
+  },
+
+  /* ---- 生息资产比率 ----
+     公式: (流动资产+投资资产)/总资产, 标准: >50% */
+  earningAssetRatio(liquidAssets,investAssets,totalAssets){
+    if(!totalAssets||totalAssets<=0) return 0;
+    return ((liquidAssets+investAssets)/totalAssets)*100;
+  },
+
+  /* ---- 理财成就率 ----
+     公式: 净资产/(年储蓄×已工作年数), 标准: ≥1 */
+  achievementRatio(netWorth,annualSavings,workYears){
+    const denom=annualSavings*Math.max(workYears,1);
+    if(!denom||denom<=0) return 0;
+    return netWorth/denom;
+  },
+
+  /* ---- 综合财务健康评分 (0-100) ----
+     三类指标：
+       财务安全指标：储蓄率12 + 保费支出比例12 + 保险安全度12 = 36
+       债务管理指标：流动性12 + 月度偿债管理10 + 清偿率10 = 32
+       财务自由指标：投资资产占比16 + 财务自由度16 = 32 */
+  healthScore(d){
+    // === 财务安全指标 (36分) ===
+    // 1. 储蓄率 (0-12)
+    const sr=d.savingsRate;
+    const sScore = sr>=30?12 : sr>=20?9 : sr>=10?6 : sr>=0?3 : 0;
+
+    // 2. 保费支出比例 (0-12) — <10%最优
+    const ipr=d.insurancePremiumRatio||0;
+    const ipScore = ipr<=10?12 : ipr<=15?9 : ipr<=20?6 : ipr<=25?3 : 0;
+
+    // 3. 保险安全度 (0-12) — 保单配置完善程度
+    const is=d.insuranceSafety||0;
+    const iScore2 = is>=80?12 : is>=60?9 : is>=40?6 : is>=20?3 : 0;
+
+    // === 债务管理指标 (32分) ===
+    // 4. 流动性 (0-12) — 3-6月最佳
+    const liq=d.liquidityRatio;
+    const lScore = liq>=3&&liq<=6?12 : liq>6&&liq<=12?9 : liq>12?7 : liq>=2?6 : liq>=1?3 : liq>0?1 : 0;
+
+    // 5. 月度偿债管理 (0-10)
+    const dti=d.debtToIncome;
+    const dScore = dti<36?10 : dti<50?8 : dti<70?5 : dti<100?3 : 0;
+
+    // 6. 清偿率 (0-10)
+    const sv=d.solvencyRatio||0;
+    const svScore = sv>=0.6&&sv<=0.7?10 : sv>0.7&&sv<=0.9?8 : sv>0.9?5 : sv>=0.4?4 : 1;
+
+    // === 财务自由指标 (32分) ===
+    // 7. 投资资产占比 (0-16)
+    const ir=d.investRatio;
+    const iScore = ir>=50?16 : ir>=30?12 : ir>=15?8 : ir>0?4 : 0;
+
+    // 8. 财务自由度 (0-16)
+    const ff=d.financialFreedom||0;
+    const ffScore = ff>=100?16 : ff>=50?12 : ff>=30?9 : ff>=15?5 : ff>=5?3 : 0;
+
+    return {
+      total:sScore+ipScore+iScore2+lScore+dScore+svScore+iScore+ffScore,
+      detail:{储蓄率:sScore,保费支出比例:ipScore,保险安全度:iScore2,流动性:lScore,月度偿债管理:dScore,清偿率:svScore,投资资产占比:iScore,财务自由度:ffScore}
+    };
+  },
+
+  /* ---- 全天候资产配置模型 (All-Weather Portfolio) ----
+     四类资产,推荐比例区间:
+       股票 30-40% · 大宗商品 15-20% · 现金/短债 15-20% · 长债 20-40%
+     调整1: 区间内取中位数为基准(平衡型)
+     调整2: 年龄修正 — 股票比例按(110-年龄)%映射到30-40%区间
+     调整3: 风险偏好偏移 */
+  allWeatherAllocation(age,risk){
+    // 区间定义 [min, max]
+    const ranges={
+      '股票(权益类)':{min:30,max:40,return:9,horizon:'长期(10年+)',color:'#3182ce'},
+      '大宗商品':{min:15,max:20,return:6,horizon:'中长期(5年+)',color:'#ed8936'},
+      '现金/短债':{min:15,max:20,return:2,horizon:'短期(1年内)',color:'#69c0ff'},
+      '长债':{min:20,max:40,return:4,horizon:'中长期(3-10年)',color:'#63b3ed'}
+    };
+
+    // 离散5%递进配置表（所有比例均为5%整数倍，总和100%）
+    const allocTable={
+      conservative:{'股票(权益类)':30,'大宗商品':15,'现金/短债':20,'长债':35},
+      balanced:    {'股票(权益类)':35,'大宗商品':15,'现金/短债':20,'长债':30},
+      aggressive:  {'股票(权益类)':40,'大宗商品':20,'现金/短债':15,'长债':25}
+    };
+    const baseAlloc=allocTable[risk]||allocTable.balanced;
+
+    // 年龄修正：35岁以下股票+0→+5%，55岁以上股票-0→-5%（5%递进）
+    let stockDelta=0;
+    if(age<35) stockDelta=5;
+    else if(age>55) stockDelta=-5;
+    // 40-50岁零修正，保持风险偏好选择不变
+
+    let base={};
+    Object.keys(baseAlloc).forEach(k=>{
+      const r=ranges[k];
+      let pct=baseAlloc[k];
+      if(k==='股票(权益类)'){
+        pct=Math.max(25,Math.min(45,pct+stockDelta));
+        // 股票增减从长债对应调整
+      }
+      base[k]={pct:pct,range:r.min+'-'+r.max+'%',return:r.return,horizon:r.horizon,color:r.color};
+    });
+
+    // 如果年龄修正改变了股票比例，从长债调整以保持总和100%
+    if(stockDelta!==0){
+      base['长债'].pct-=stockDelta;
+    }
+
+    return base;
+  },
+
+  /* ---- 复利终值 ----
+     公式: FV = PV × (1+r)^n + PMT × [((1+r)^n - 1) / r]
+     PV: 现值, PMT: 定期投入, r: 期利率, n: 期数 */
+  futureValue(pv,pmt,annualRate,years){
+    const r=annualRate/12;
+    const n=years*12;
+    const pvFV=pv*Math.pow(1+r,n);
+    const pmtFV=r>0?pmt*((Math.pow(1+r,n)-1)/r):pmt*n;
+    return pvFV+pmtFV;
+  },
+
+  /* ---- 目标现值折算 ----
+     公式: PV = FV / (1+r)^n
+     含义: 未来目标在今天的等值金额 */
+  presentValue(fv,annualRate,years){
+    const r=annualRate;
+    return fv/Math.pow(1+r,years);
+  },
+
+  /* ---- 目标所需月投 ----
+     公式: PMT = FV_goal × r / [(1+r)^n - 1]
+     （扣除已有本金复利增长后的差额） */
+  requiredMonthlyContribution(goalAmount,currentPrincipal,annualRate,years){
+    const r=annualRate/12;
+    const n=years*12;
+    const futurePrincipal=currentPrincipal*Math.pow(1+r,n);
+    const remaining=goalAmount-futurePrincipal;
+    if(remaining<=0) return 0;
+    if(r<=0) return remaining/n;
+    return remaining*r/(Math.pow(1+r,n)-1);
+  },
+
+  /* ---- 通胀调整 ----
+     公式: 通胀后金额 = 名义金额 × (1+inflation)^years */
+  inflate(amount,inflationRate,years){
+    return amount*Math.pow(1+inflationRate,years);
+  },
+
+  /* ---- 紧急备用金需求 ----
+     公式: 月支出 × 月数(3-6) */
+  emergencyFund(monthlyExpense,months=6){
+    return monthlyExpense*months;
+  },
+
+  /* ---- 保险需求（生命价值法） ----
+     公式: 保险额度 = (年收入 × 剩余工作年限) - 净资产
+     简化版: 年收入 × 10 */
+  insuranceNeed(annualIncome,netWorth,remainingYears){
+    const lifeValue=annualIncome*Math.min(remainingYears,20);
+    return Math.max(0,lifeValue-netWorth);
+  }
+};
+
+/* ====================================================================
+   UI 状态与导航
+   ==================================================================== */
+let currentStep=1;
+let selectedRisk='balanced';
+let charts={};
+
+function toggleMobileNav(){
+  var overlay=document.getElementById('mobileNavOverlay');
+  var panel=document.getElementById('mobileNavPanel');
+  if(overlay){ overlay.classList.toggle('active'); }
+  if(panel){ panel.classList.toggle('active'); }
+}
+
+function goStep(n){
+  document.querySelectorAll('.step-content').forEach(el=>el.classList.remove('active'));
+  document.getElementById('step'+n).classList.add('active');
+  document.querySelectorAll('.nav-step').forEach((el,i)=>{
+    el.classList.toggle('active',i===n-1);
+    el.classList.toggle('done',i<n-1);
+  });
+  // 同步更新移动端导航
+  document.querySelectorAll('.mobile-nav-panel .nav-step').forEach(function(el,i){
+    el.classList.toggle('active',i===n-1);
+    el.classList.toggle('done',i<n-1);
+  });
+  currentStep=n;
+  document.getElementById('navBadge').textContent='步骤 '+n+' / 7';
+  // 每次切换步骤自动保存
+  if(n>1) saveData();
+  if(n===6) generateReport();
+  if(n===7) renderAllWeatherPhilosophy();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function selectRisk(el){
+  document.querySelectorAll('.risk-card').forEach(c=>c.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedRisk=el.dataset.risk;
+}
+
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+/* ---- 动态行管理 ---- */
+function addLineItem(listId){
+  const list=document.getElementById(listId);
+  const item=document.createElement('div');
+  item.className='line-item';
+  const isIncome=listId==='incomeList';
+  const calcFn=isIncome?'calcIncome()':'calcExpense()';
+  item.innerHTML=`
+    <input class="form-input" placeholder="项目名称" oninput="${calcFn}">
+    <div class="form-suffix">
+      <input class="form-input" type="number" min="0" placeholder="金额" value="0" oninput="if(this.value<0)this.value=0;${calcFn}">
+      <span class="form-unit">元/月</span>
+    </div>
+    <button class="btn-remove" onclick="removeLineItem(this);${calcFn}">×</button>
+  `;
+  list.appendChild(item);
+}
+
+function removeLineItem(btn){
+  btn.closest('.line-item').remove();
+}
+
+function addAssetItem(){
+  const list=document.getElementById('assetList');
+  const item=document.createElement('div');
+  item.className='line-item';
+  item.innerHTML=`
+    <select class="form-input asset-cat" onchange="calcAssets()" style="font-size:13px">
+      <option value="self">自住房产</option>
+      <option value="invest">投资性房产</option>
+      <option value="invest" selected>股票/基金/投资</option>
+      <option value="liquid">活期存款/货币基金</option>
+      <option value="invest">理财型保险</option>
+      <option value="invest">黄金/大宗商品</option>
+      <option value="other">其他(公积金/出借/等)</option>
+    </select>
+    <div class="form-suffix">
+      <input class="form-input asset-val" type="number" min="0" placeholder="金额" value="0" oninput="if(this.value<0)this.value=0;calcAssets()">
+      <span class="form-unit">元</span>
+    </div>
+    <button class="btn-remove" onclick="removeLineItem(this);calcAssets()">×</button>
+  `;
+  list.appendChild(item);
+}
+
+function addLiabilityItem(){
+  const list=document.getElementById('liabilityList');
+  const item=document.createElement('div');
+  item.className='line-item';
+  item.innerHTML=`
+    <input class="form-input" placeholder="负债名称" oninput="calcLiabilities()">
+    <div class="form-suffix">
+      <input class="form-input liability-val" type="number" min="0" placeholder="金额" value="0" oninput="if(this.value<0)this.value=0;calcLiabilities()">
+      <span class="form-unit">元</span>
+    </div>
+    <button class="btn-remove" onclick="removeLineItem(this);calcLiabilities()">×</button>
+  `;
+  list.appendChild(item);
+}
+
+/* ---- 计算收入 ---- */
+function calcIncome(){
+  const items=document.querySelectorAll('#incomeList .line-item');
+  let total=0;
+  items.forEach(item=>{
+    const val=parseFloat(item.querySelectorAll('input[type=number]')[0].value)||0;
+    total+=val;
+  });
+  document.getElementById('totalIncome').textContent='¥'+fmt(total);
+  calcSurplus();
+  return total;
+}
+
+/* ---- 计算支出 ---- */
+function calcExpense(){
+  const items=document.querySelectorAll('#expenseList .line-item');
+  let total=0;
+  items.forEach(item=>{
+    const val=parseFloat(item.querySelectorAll('input[type=number]')[0].value)||0;
+    total+=val;
+  });
+  document.getElementById('totalExpense').textContent='¥'+fmt(total);
+  calcSurplus();
+  return total;
+}
+
+function calcSurplus(){
+  const income=calcIncome.raw||0;
+  const expense=calcExpense.raw||0;
+  // 重新获取
+  const inc=parseSum('#incomeList');
+  const exp=parseSum('#expenseList');
+  const surplus=inc-exp;
+  document.getElementById('monthlySurplus').textContent='¥'+fmt(surplus);
+  const sr=Engine.savingsRate(inc,exp);
+  document.getElementById('savingsRate').textContent=sr.toFixed(1)+'%';
+  const srEl=document.getElementById('savingsRate');
+  srEl.className='summary-value '+(sr>=20?'positive':sr>=10?'':'negative');
+  calcIncome.raw=inc;
+  calcExpense.raw=exp;
+}
+
+function parseSum(selector){
+  let total=0;
+  document.querySelectorAll(selector+' .line-item input[type=number]').forEach(inp=>{
+    total+=parseFloat(inp.value)||0;
+  });
+  return total;
+}
+
+/* ---- 计算资产 ---- */
+function calcAssets(){
+  const total=parseSum('#assetList');
+  document.getElementById('totalAssets').textContent='¥'+fmt(total);
+  calcNetWorth();
+  return total;
+}
+
+/* ---- 计算负债 ---- */
+function calcLiabilities(){
+  const total=parseSum('#liabilityList');
+  document.getElementById('totalLiabilities').textContent='¥'+fmt(total);
+  calcNetWorth();
+  return total;
+}
+
+function calcNetWorth(){
+  const assets=parseSum('#assetList');
+  const liab=parseSum('#liabilityList');
+  const nw=assets-liab;
+  document.getElementById('netWorth').textContent='¥'+fmt(nw);
+  const nwEl=document.getElementById('netWorth');
+  nwEl.className='summary-value '+(nw>=0?'positive':'negative');
+  const ratio=Engine.assetLiabilityRatio(liab,assets);
+  document.getElementById('debtRatio').textContent=ratio.toFixed(1)+'%';
+}
+
+/* ---- 格式化数字 ---- */
+function fmt(n){
+  if(n==null||isNaN(n)) return '—';
+  if(n>=100000000) return (n/100000000).toFixed(2)+'亿';
+  if(n>=10000) return (n/10000).toFixed(2)+'万';
+  return Math.round(n).toLocaleString();
+}
+
+function fmtFull(n){
+  if(n==null||isNaN(n)) return '—';
+  return Math.round(n).toLocaleString();
+}
+
+/* ====================================================================
+   人生规划目标管理
+   ==================================================================== */
+let goals=[
+  {name:'购车',type:'short',years:2,amount:150000,existing:0},
+  {name:'子女教育基金',type:'mid',years:8,amount:800000,existing:50000},
+  {name:'退休储备',type:'long',years:25,amount:5000000,existing:350000}
+];
+
+function renderGoals(){
+  var list=document.getElementById('goalList');
+  list.innerHTML='';
+  goals.forEach(function(g,i){
+    var div=document.createElement('div');
+    div.className='goal-card '+g.type;
+    // 根据期限类型获取年限范围
+    var yearRange=g.type==='short'?'1-3':g.type==='mid'?'3-10':'10+';
+    div.innerHTML=''
+      +'<div class="form-group" style="grid-column:1/-1">'
+      +'<label class="form-label">目标名称</label>'
+      +'<input class="form-input" value="'+g.name+'" oninput="goals['+i+'].name=this.value">'
+      +'</div>'
+      +'<div class="form-group">'
+      +'<label class="form-label">期限类型</label>'
+      +'<select class="form-select" onchange="var v=this.value;goals['+i+'].type=v;'
+      +'var yr=goals['+i+'].years;'
+      +'if(v===\'short\'){if(yr<1||yr>3)goals['+i+'].years=2}'
+      +'else if(v===\'mid\'){if(yr<3||yr>10)goals['+i+'].years=5}'
+      +'else{if(yr<10)goals['+i+'].years=15};'
+      +'renderGoals()">'
+      +'<option value="short" '+(g.type==='short'?'selected':'')+'>短期(1-3年)</option>'
+      +'<option value="mid" '+(g.type==='mid'?'selected':'')+'>中期(3-10年)</option>'
+      +'<option value="long" '+(g.type==='long'?'selected':'')+'>长期(10年+)</option>'
+      +'</select>'
+      +'</div>'
+      +'<div class="form-group">'
+      +'<label class="form-label">年限（'+yearRange+'年）</label>'
+      +'<input class="form-input" type="number" min="'+ (g.type==='short'?1:g.type==='mid'?3:10) +'"'
+      + (g.type==='long'?'':' max="'+ (g.type==='short'?3:10) +'"')
+      +' value="'+g.years+'" oninput="goals['+i+'].years=parseInt(this.value)||1">'
+      +'</div>'
+      +'<div class="form-group">'
+      +'<label class="form-label">目标金额</label>'
+      +'<div class="form-suffix">'
+      +'<input class="form-input" type="number" min="0" value="'+g.amount+'" oninput="goals['+i+'].amount=parseFloat(this.value)||0">'
+      +'<span class="form-unit">元</span>'
+      +'</div>'
+      +'</div>'
+      +'<div class="form-group">'
+      +'<label class="form-label">已储备</label>'
+      +'<div class="form-suffix">'
+      +'<input class="form-input" type="number" min="0" value="'+g.existing+'" oninput="goals['+i+'].existing=parseFloat(this.value)||0">'
+      +'<span class="form-unit">元</span>'
+      +'</div>'
+      +'</div>';
+    var btn=document.createElement('button');
+    btn.className='btn-remove';
+    btn.style.cssText='position:absolute;top:8px;right:8px;height:28px;width:28px;z-index:1';
+    btn.textContent='\u00D7';
+    btn.onclick=function(){goals.splice(i,1);renderGoals();};
+    div.appendChild(btn);
+    list.appendChild(div);
+  });
+}
+
+function addGoalItem(){
+  goals.push({name:'新目标',type:'mid',years:5,amount:100000,existing:0});
+  renderGoals();
+}
+
+/* ====================================================================
+   保单分析引擎（多成员版本）
+   ==================================================================== */
+// ---- 家庭成员数据 ----
+let familyMembers=[
+  {id:1,name:'本人',relationship:'本人',age:35,monthlyIncome:25000,isBreadwinner:true,
+   existingTermLife:0,existingCriticalIll:0,existingMedical:'none',existingAccident:0}
+];
+let memberIdCounter=1;
+
+// ---- 计算单个成员保险需求 ----
+function calcMemberInsurance(m,familyTotalLiab,familyExpense,annualRaisingExpense){
+  const annualIncome=m.monthlyIncome*12;
+  const workYears=Math.max(1,(parseInt(document.getElementById('retireAge').value)||60)-m.age);
+
+  // 判断是否需要寿险：经济支柱 + 有收入
+  const needLife=m.isBreadwinner&&m.monthlyIncome>0;
+
+  // 定期寿险：当前剩余贷款 + 20年养育/赡养支出
+  let termLifeNeed=0;
+  if(needLife){
+    const raisingCover=(annualRaisingExpense||0)*20;
+    termLifeNeed=familyTotalLiab+raisingCover;
+  }
+
+  // 重疾险：5年年收入
+  const criticalIllNeed=annualIncome*5;
+  const criticalIllMin=m.age<=17?300000:300000;
+  const criticalIllSuggested=m.monthlyIncome>0?Math.max(criticalIllMin,criticalIllNeed):300000;
+
+  // 医疗险
+  let medicalAdvice='百万医疗险（基础）';
+  let medicalPremium=500;
+  if(m.existingMedical==='mid'){medicalAdvice='中端医疗险';medicalPremium=3000;}
+  else if(m.existingMedical==='high'){medicalAdvice='高端医疗险';medicalPremium=8000;}
+
+  // 意外险：成人5倍年收入，儿童/老人保额上限20-50万
+  const accidentNeed=annualIncome*5;
+  // 儿童（≤17岁）和老人（≥60岁）：建议保额20-50万
+  const isMinorOrElder=m.age<=17||m.age>=60;
+  const accidentMin=isMinorOrElder?200000:100000;
+  const accidentMax=isMinorOrElder?500000:Infinity;
+  let accidentSuggested=m.monthlyIncome>0?Math.max(accidentMin,accidentNeed):(isMinorOrElder?300000:100000);
+  accidentSuggested=Math.min(accidentSuggested,accidentMax);
+
+  // 保费
+  const termLifePremium=termLifeNeed*0.001;
+  const accidentPremium=accidentSuggested*0.0015;
+  const ageAdj=m.age<=30?1:m.age<=40?1.3:m.age<=50?2:m.age<=60?3:4;
+  const criticalIllPremium=(criticalIllSuggested/10000)*400*ageAdj;
+
+  const memberProtectionPremium=termLifePremium+medicalPremium+accidentPremium;
+  const memberSavingsPremium=criticalIllPremium;
+
+  // 缺口
+  const existingTermLifeY=m.existingTermLife*10000;
+  const existingCriticalIllY=m.existingCriticalIll*10000;
+  const existingAccidentY=m.existingAccident*10000;
+  const mgaps=[];
+  if(termLifeNeed>existingTermLifeY&&needLife) mgaps.push({name:'定期寿险',need:termLifeNeed,have:existingTermLifeY});
+  if(criticalIllSuggested>existingCriticalIllY) mgaps.push({name:'重疾险',need:criticalIllSuggested,have:existingCriticalIllY});
+  if(m.existingMedical==='none') mgaps.push({name:'医疗险',need:1,have:0});
+  if(accidentSuggested>existingAccidentY) mgaps.push({name:'意外险',need:accidentSuggested,have:existingAccidentY});
+
+  return {member:m,termLifeNeed,criticalIllSuggested,medicalAdvice,medicalPremium,
+    accidentSuggested,termLifePremium,accidentPremium,criticalIllPremium:criticalIllPremium*ageAdj,
+    memberProtectionPremium,memberSavingsPremium,gaps:mgaps,needLife};
+}
+
+// ---- 主分析函数 ----
+function analyzeInsurance(){
+  const income=parseSum('#incomeList');
+  const expense=parseSum('#expenseList');
+  const totalLiab=parseSum('#liabilityList');
+  const totalAssets=parseSum('#assetList');
+  const netWorth=totalAssets-totalLiab;
+  const surplus=income-expense;
+  const annualIncome=income*12;
+
+  // 解析育儿/赡养月支出（用于定期寿险保额计算）
+  let raisingExpense=0;
+  document.querySelectorAll('#expenseList .line-item').forEach(item=>{
+    const name=item.querySelector('input:not([type=number])')?.value||'';
+    if(/育儿|赡养/i.test(name)){
+      raisingExpense+=parseFloat(item.querySelector('input[type=number]')?.value)||0;
+    }
+  });
+  const annualRaisingExpense=raisingExpense*12;
+
+  // 计算每个成员的保险需求
+  const memberResults=familyMembers.map(m=>calcMemberInsurance(m,totalLiab,expense,annualRaisingExpense));
+
+  // 汇总
+  let totalTermLifeNeed=0,totalCriticalIll=0,totalAccident=0,totalMedicalPremium=0;
+  let totalProtectionPremium=0,totalSavingsPremium=0;
+  let allGaps=[];
+  memberResults.forEach(r=>{
+    totalTermLifeNeed+=r.termLifeNeed;
+    totalCriticalIll+=r.criticalIllSuggested;
+    totalAccident+=r.accidentSuggested;
+    totalMedicalPremium+=r.medicalPremium;
+    totalProtectionPremium+=r.memberProtectionPremium;
+    totalSavingsPremium+=r.memberSavingsPremium;
+    allGaps=allGaps.concat(r.gaps.map(g=>({...g,memberName:r.member.name})));
+  });
+  const totalPremium=totalProtectionPremium+totalSavingsPremium;
+  const premiumRatio=annualIncome>0?(totalPremium/annualIncome*100):0;
+
+  // 理财型保险（与资产明细一一对应，不区分险种类型，不做达标分析）
+  let wealthInsName='',wealthInsValue=0;
+  document.querySelectorAll('#assetList .line-item').forEach(item=>{
+    const name=item.querySelector('input:not([type=number])')?.value||'';
+    const val=parseFloat(item.querySelector('input[type=number]')?.value)||0;
+    if(/理财.*保险|保险.*理财/i.test(name)){
+      wealthInsName=name;
+      wealthInsValue=val;
+    }
+  });
+
+  const wealthDisplay=document.getElementById('wealthInsuranceDisplay');
+  if(wealthDisplay){
+    if(wealthInsValue>0){
+      const pct=totalAssets>0?(wealthInsValue/totalAssets*100).toFixed(1):'0.0';
+      wealthDisplay.innerHTML=`
+        <div style="display:flex;align-items:center;gap:24px;padding:16px;background:var(--c-bg);border-radius:10px">
+          <div style="flex:1">
+            <div style="font-size:13px;color:var(--c-text-sec);margin-bottom:4px">资产项目</div>
+            <div style="font-weight:700;font-size:16px">${wealthInsName}</div>
+          </div>
+          <div style="text-align:center">
+            <div style="font-size:13px;color:var(--c-text-sec);margin-bottom:4px">当前金额</div>
+            <div style="font-weight:700;font-size:20px;color:var(--c-primary)">¥${fmt(wealthInsValue)}</div>
+          </div>
+          <div style="text-align:center">
+            <div style="font-size:13px;color:var(--c-text-sec);margin-bottom:4px">占总资产</div>
+            <div style="font-weight:700;font-size:20px;color:var(--c-accent)">${pct}%</div>
+          </div>
+        </div>
+        <div style="margin-top:10px;font-size:12px;color:var(--c-text-sec);padding:8px 12px;background:var(--c-bg);border-radius:6px">
+          💡 以上数据来自「资产明细」中填写的"${wealthInsName}"，与资产明细一一对应，不单独做达标分析。
+        </div>`;
+    }else{
+      wealthDisplay.innerHTML=`
+        <div style="text-align:center;padding:28px;color:var(--c-text-sec)">
+          <div style="font-size:14px;margin-bottom:6px">暂未配置理财型保险</div>
+          <div style="font-size:12px">请在「资产明细」中填写"理财型保险"项</div>
+        </div>`;
+    }
+  }
+
+  // 更新保费总览
+  const pTotal=document.getElementById('totalPremium');
+  const pRatio=document.getElementById('premiumRatio');
+  const pProt=document.getElementById('protectionPremium');
+  const pSav=document.getElementById('savingsPremium');
+  if(pTotal) pTotal.textContent='¥'+fmt(totalPremium);
+  if(pRatio){
+    pRatio.textContent=premiumRatio.toFixed(1)+'%';
+    pRatio.className='summary-value '+(premiumRatio<=10?'positive':'negative');
+  }
+  if(pProt) pProt.textContent='¥'+fmt(totalProtectionPremium);
+  if(pSav) pSav.textContent='¥'+fmt(totalSavingsPremium);
+
+  return {memberResults,totalPremium,premiumRatio,totalProtectionPremium,totalSavingsPremium,
+    allGaps,annualIncome,totalTermLifeNeed,totalCriticalIll,totalAccident};
+}
+
+// ---- 成员管理 ----
+function addFamilyMember(){
+  memberIdCounter++;
+  const relMap={'本人':1,'配偶':2,'子女':3,'父母':4};
+  const relCount={};
+  familyMembers.forEach(m=>{relCount[m.relationship]=(relCount[m.relationship]||0)+1;});
+  
+  let defaultRel='配偶';
+  if(!relCount['本人']) defaultRel='本人';
+  else if(!relCount['配偶']) defaultRel='配偶';
+  else defaultRel='子女';
+  
+  const isChild=defaultRel==='子女';
+  familyMembers.push({
+    id:memberIdCounter,name:defaultRel==='本人'?'本人':defaultRel+(relCount[defaultRel]?relCount[defaultRel]+1:1),
+    relationship:defaultRel,age:isChild?5:defaultRel==='父母'?65:35,
+    monthlyIncome:isChild?0:defaultRel==='父母'?0:15000,
+    isBreadwinner:!isChild&&defaultRel!=='父母',
+    existingTermLife:0,existingCriticalIll:0,existingMedical:'none',existingAccident:0
+  });
+  renderFamilyUI();
+}
+
+function removeFamilyMember(id){
+  if(familyMembers.length<=1){showToast('至少保留一位家庭成员');return;}
+  familyMembers=familyMembers.filter(m=>m.id!==id);
+  renderFamilyUI();
+}
+
+function renderFamilyUI(){
+  const container=document.getElementById('familyMembersList');
+  if(!container) return;
+
+  // 同步本人数据：年龄从Step1，月收入从Step2
+  const step1Age=parseInt(document.getElementById('clientAge')?.value)||35;
+  const step2Income=parseSum('#incomeList');
+  familyMembers.forEach(m=>{
+    if(m.relationship==='本人'){
+      m.age=step1Age;
+      m.monthlyIncome=step2Income;
+      m.isBreadwinner=step2Income>0;
+    }
+  });
+  
+  container.innerHTML=familyMembers.map(m=>{
+    const isWageEarner=m.isBreadwinner&&m.monthlyIncome>0;
+    const isSelf=m.relationship==='本人';
+    return `<div style="border:1.5px solid var(--c-border);border-radius:10px;padding:14px;margin-bottom:12px;background:#fff">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-weight:700;font-size:15px">👤 ${m.name}</span>
+          <select class="form-select" style="width:auto;padding:4px 8px;font-size:12px" onchange="familyMembers.find(x=>x.id===${m.id}).relationship=this.value;renderFamilyUI()">
+            <option value="本人" ${m.relationship==='本人'?'selected':''}>本人</option>
+            <option value="配偶" ${m.relationship==='配偶'?'selected':''}>配偶</option>
+            <option value="子女" ${m.relationship==='子女'?'selected':''}>子女</option>
+            <option value="父母" ${m.relationship==='父母'?'selected':''}>父母</option>
+          </select>
+          ${isSelf ? `<span style="font-size:12px;color:var(--c-text-sec);background:var(--c-bg);padding:4px 8px;border-radius:4px">
+            ${m.age}岁 · ¥${fmt(step2Income)}/月 <span style="font-size:10px;opacity:.6">（同步自第1-2步）</span>
+          </span>` : `<span style="font-size:12px;color:var(--c-text-sec)">
+            <input class="form-input" type="number" min="1" max="120" value="${m.age}" style="width:50px;display:inline;padding:4px 6px;font-size:12px" 
+              oninput="let fm=familyMembers.find(x=>x.id==${m.id});fm.age=parseInt(this.value)||0;analyzeInsurance()"> 岁
+          </span>`}
+        </div>
+        ${familyMembers.length>1?`<button class="btn-remove" onclick="removeFamilyMember(${m.id})" style="width:24px;height:24px;font-size:12px">×</button>`:''}
+      </div>
+      <div class="form-grid" style="grid-template-columns:1fr 1fr 1fr">
+        ${isSelf ? `<div class="form-group">
+          <label class="form-label">月收入 <span style="font-size:10px;color:var(--c-text-sec)">（同步自第2步）</span></label>
+          <div style="padding:6px 8px;font-size:13px;font-weight:600;color:var(--c-primary);background:var(--c-bg);border-radius:6px">¥${fmt(step2Income)} /月</div>
+        </div>` : `<div class="form-group">
+          <label class="form-label">月收入</label>
+          <div class="form-suffix">
+            <input class="form-input" type="number" min="0" value="${m.monthlyIncome}" style="padding:6px 8px;font-size:12px"
+              oninput="let fm=familyMembers.find(x=>x.id==${m.id});fm.monthlyIncome=parseFloat(this.value)||0;fm.isBreadwinner=fm.monthlyIncome>0&&(fm.relationship==='本人'||fm.relationship==='配偶');analyzeInsurance()">
+            <span class="form-unit" style="padding:6px 8px;font-size:12px">元/月</span>
+          </div>
+        </div>`}
+        <div class="form-group">
+          <label class="form-label">已有寿险${!isWageEarner?'（无需）':''}</label>
+          <div class="form-suffix">
+            <input class="form-input" type="number" min="0" value="${m.existingTermLife}" style="padding:6px 8px;font-size:12px" ${!isWageEarner?'disabled':''}
+              oninput="let fm=familyMembers.find(x=>x.id==${m.id});fm.existingTermLife=parseFloat(this.value)||0;analyzeInsurance()">
+            <span class="form-unit" style="padding:6px 8px;font-size:12px">万元</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">已有重疾险</label>
+          <div class="form-suffix">
+            <input class="form-input" type="number" min="0" value="${m.existingCriticalIll}" style="padding:6px 8px;font-size:12px"
+              oninput="let fm=familyMembers.find(x=>x.id==${m.id});fm.existingCriticalIll=parseFloat(this.value)||0;analyzeInsurance()">
+            <span class="form-unit" style="padding:6px 8px;font-size:12px">万元</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">已有医疗险</label>
+          <select class="form-select" style="padding:6px 8px;font-size:12px"
+            onchange="let fm=familyMembers.find(x=>x.id==${m.id});fm.existingMedical=this.value;analyzeInsurance()">
+            <option value="none" ${m.existingMedical==='none'?'selected':''}>无</option>
+            <option value="million" ${m.existingMedical==='million'?'selected':''}>百万医疗险</option>
+            <option value="mid" ${m.existingMedical==='mid'?'selected':''}>中端医疗险</option>
+            <option value="high" ${m.existingMedical==='high'?'selected':''}>高端医疗险</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">已有意外险</label>
+          <div class="form-suffix">
+            <input class="form-input" type="number" min="0" value="${m.existingAccident}" style="padding:6px 8px;font-size:12px"
+              oninput="let fm=familyMembers.find(x=>x.id==${m.id});fm.existingAccident=parseFloat(this.value)||0;analyzeInsurance()">
+            <span class="form-unit" style="padding:6px 8px;font-size:12px">万元</span>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+  
+  analyzeInsurance();
+}
+
+// 初始化时渲染
+renderFamilyUI();
+
+/* ====================================================================
+   报告生成引擎
+   ==================================================================== */
+function generateReport(){
+  // 收集数据
+  const age=parseInt(document.getElementById('clientAge').value)||35;
+  const retireAge=parseInt(document.getElementById('retireAge').value)||60;
+  const income=parseSum('#incomeList');
+  const expense=parseSum('#expenseList');
+  const totalAssets=parseSum('#assetList');
+  const totalLiab=parseSum('#liabilityList');
+  const monthlyDebtPay=parseFloat(document.getElementById('monthlyDebtPayment').value)||0;
+
+  // 输入验证
+  if(income<=0 || totalAssets<=0){
+    showToast('请先填写收入和资产数据');
+    return;
+  }
+  if(retireAge<=age){
+    showToast('退休年龄必须大于当前年龄');
+    return;
+  }
+
+  // 报告头部信息
+  var clientName=document.getElementById('clientName')?.value?.trim()||'客户';
+  var now=new Date();
+  var dateStr=now.getFullYear()+'年'+(now.getMonth()+1)+'月'+now.getDate()+'日';
+  document.getElementById('reportClientName').textContent=clientName;
+  document.getElementById('reportDate').textContent=dateStr;
+  document.getElementById('reportHeader').style.display='block';
+
+  var surplus=income-expense;
+  const netWorth=totalAssets-totalLiab;
+
+  // 识别各类资产
+  var assetItems=document.querySelectorAll('#assetList .line-item');
+  var liquidAssets=0,investAssets=0,selfProperty=0,wealthAssets=0;
+  assetItems.forEach(function(item){
+    var cat=(item.querySelector('.asset-cat')||{}).value||'other';
+    var val=parseFloat((item.querySelector('input[type=number]')||{}).value)||0;
+    if(val<=0) return;
+    if(cat==='self') selfProperty+=val;
+    else if(cat==='liquid') liquidAssets+=val;
+    else if(cat==='invest') investAssets+=val;
+    else wealthAssets+=val;
+  });
+  // 如果没有识别到流动资产，将"其他"类资产中可变现部分计入流动资产
+  if(liquidAssets===0 && wealthAssets>0) liquidAssets=wealthAssets*0.3;
+
+  // 识别保险支出（用于保障账户估算）
+  let insuranceExpense=0;
+  document.querySelectorAll('#expenseList .line-item').forEach(item=>{
+    const name=item.querySelector('input:not([type=number])')?.value||'';
+    if(/保险/i.test(name)){
+      insuranceExpense+=parseFloat(item.querySelector('input[type=number]')?.value)||0;
+    }
+  });
+
+  // 被动收入估算（投资资产 × 保守2.5%年化 / 12）
+  const passiveInput=parseFloat(document.getElementById('passiveIncome')?.value)||0;
+  const passiveIncome=passiveInput>0?passiveInput:investAssets*0.025/12;
+
+  // 计算各项指标
+  const sr=Engine.savingsRate(income,expense);
+  const dti=Engine.debtToIncome(monthlyDebtPay,income);
+  const liq=Engine.liquidityRatio(liquidAssets,expense);
+  const ir=Engine.investmentRatio(investAssets,totalAssets);
+  const ff=Engine.financialFreedom(passiveIncome,expense);
+
+  // 保费支出比例
+  const insurancePremiumRatio=income>0?(insuranceExpense/income*100):0;
+
+  // 保险安全度（保单配置完善程度——基于家庭成员现有保单与需求对比）
+  let insuranceSafety=100;
+  const memberSafetyScores=[];
+  familyMembers.forEach(m=>{
+    let covered=0,total=0;
+    // 定期寿险（仅经济支柱需要）
+    if(m.isBreadwinner&&m.monthlyIncome>0){total++; if(m.existingTermLife>0) covered++;}
+    // 重疾险
+    total++; if(m.existingCriticalIll>0) covered++;
+    // 医疗险
+    total++; if(m.existingMedical!=='none') covered++;
+    // 意外险
+    total++; if(m.existingAccident>0) covered++;
+    if(total>0) memberSafetyScores.push(covered/total*100);
+    else memberSafetyScores.push(100);
+  });
+  insuranceSafety=memberSafetyScores.length>0?memberSafetyScores.reduce((a,b)=>a+b,0)/memberSafetyScores.length:0;
+
+  // 清偿率
+  const sv=Engine.solvencyRatio(netWorth,totalAssets);
+
+  // 健康评分（8维度）
+  const health=Engine.healthScore({
+    savingsRate:sr,debtToIncome:dti,liquidityRatio:liq,
+    investRatio:ir,solvencyRatio:sv,
+    financialFreedom:ff,
+    insurancePremiumRatio:insurancePremiumRatio,
+    insuranceSafety:insuranceSafety
+  });
+
+  // 资产负债汇总表 + 月度收支结余表
+  renderBalanceSheet();
+  renderCashFlow();
+
+  // 资产配置建议
+  const allocation=Engine.allWeatherAllocation(age,selectedRisk);
+  renderAllocTable(allocation,investAssets);
+
+  // 雷达图
+  renderRadarChart(health.detail,{sr,dti,liq,ir,sv,ff,ipr:insurancePremiumRatio,is:insuranceSafety});
+
+  // ROI预测
+  renderROIChart(investAssets,surplus,retireAge-age,age,retireAge,expense);
+  // 更新草帽图说明中的实际数字
+  (function(){
+    const note=document.getElementById('strawHatNote');
+    if(note){
+      note.innerHTML=note.innerHTML
+        .replace('__PRINCIPAL__','（'+fmt(investAssets)+'）')
+        .replace('__SURPLUS__','（'+fmt(surplus)+'/月）')
+        .replace('__EXPENSE__','（'+fmt(expense)+'/月）');
+    }
+  })();
+
+  // 目标达成分析
+  renderGoalAnalysis(investAssets,surplus);
+
+  // 保单额度充足性分析
+  renderInsuranceAdequacy();
+
+  // 综合点评
+  renderComprehensiveReview(health,{sr,dti,liq,ir,sv,ff,ipr:insurancePremiumRatio,is:insuranceSafety},{income,expense,surplus,totalAssets,totalLiab,netWorth,investAssets,liquidAssets,age,retireAge,selectedRisk});
+
+  // 自动保存数据
+  saveData();
+}
+
+/* ---- 资产配置明细表 ---- */
+function renderAllocTable(alloc,investAmount){
+  const body=document.getElementById('allocTableBody');
+
+  // 从资产明细中计算当前四类资产占比（自住房产除外）
+  let curStock=0,curCommodity=0,curCash=0,curBond=0;
+  document.querySelectorAll('#assetList .line-item').forEach(item=>{
+    var sel=item.querySelector('.asset-cat');
+    var cat=sel?sel.value:'';
+    var val=parseFloat(item.querySelector('input[type=number]')?.value)||0;
+    if(cat==='self') return;
+    if(cat==='liquid') curCash+=val;
+    else if(cat==='invest') curStock+=val;
+    else curBond+=val;
+  });
+  const curTotal=curStock+curCommodity+curCash+curBond;
+
+  // 映射到alloc的key
+  const curMap={
+    '股票(权益类)':curStock,
+    '大宗商品':curCommodity,
+    '现金/短债':curCash,
+    '长债':curBond
+  };
+
+  body.innerHTML=Object.keys(alloc).map(k=>{
+    const a=alloc[k];
+    const curVal=curMap[k]||0;
+    const curPct=curTotal>0?(curVal/curTotal*100):0;
+    const [minPct,maxPct]=a.range.split('-').map(s=>parseFloat(s));
+
+    // 增减建议
+    let adviceText,adviceColor,adviceIcon;
+    if(curTotal===0){
+      adviceText='暂无资产数据';adviceColor='var(--c-text-sec)';adviceIcon='•';
+    }else if(curPct<minPct){
+      const gap=minPct-curPct;
+      adviceText=`建议增持 ${gap.toFixed(1)}%`;adviceColor='var(--c-danger)';adviceIcon='↑';
+    }else if(curPct>maxPct){
+      const gap=curPct-maxPct;
+      adviceText=`建议减持 ${gap.toFixed(1)}%`;adviceColor='var(--c-warning)';adviceIcon='↓';
+    }else{
+      adviceText='比例合理';adviceColor='var(--c-success)';adviceIcon='✓';
+    }
+
+    const displayName = k === '大宗商品' ? '大宗商品(黄金等)' : k;
+    return `<tr>
+      <td><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${a.color};margin-right:6px"></span>${displayName}</td>
+      <td style="font-weight:600;color:var(--c-primary)">${a.range}</td>
+      <td style="font-weight:700">${curTotal>0?curPct.toFixed(1)+'%':'—'}</td>
+      <td style="color:${adviceColor};font-weight:600">${adviceIcon} ${adviceText}</td>
+    </tr>`;
+  }).join('');
+
+  // 全天候配置说明
+  const note=document.getElementById('allocNote');
+  if(note){
+    note.innerHTML=`<div style="padding:10px 12px;background:var(--c-bg);border-radius:6px;font-size:12px;color:var(--c-text-sec);line-height:1.6">
+      💡 <b>当前比例</b>根据「资产明细」自动计算（自住房产不计入，投资性房产归入股票权益类）。<b>增减建议</b>将当前实际占比与推荐区间对比：低于区间下限建议增持，高于上限建议减持，区间内为合理。这是<b>全天候资产配置</b>的核心——四类资产同时持有，每季度/年度再平衡恢复目标比例，不预测市场、不择时。
+    </div>`;
+  }
+}
+
+/* ---- 全天候投资理念与再平衡策略 ---- */
+function renderAllWeatherPhilosophy(alloc,investAmount){
+  // 若未传入参数，从用户数据重新计算
+  if(!alloc){
+    const age=parseInt(document.getElementById('clientAge')?.value)||35;
+    alloc=Engine.allWeatherAllocation(age,selectedRisk);
+  }
+  if(!investAmount){
+    let inv=0;
+    document.querySelectorAll('#assetList .line-item').forEach(item=>{
+      const name=item.querySelector('input:not([type=number])')?.value||'';
+      const val=parseFloat(item.querySelector('input[type=number]')?.value)||0;
+      if(!/自住/i.test(name)) inv+=val;
+    });
+    investAmount=inv||1000000;
+  }
+  const box=document.getElementById('allWeatherPhilosophy');
+  if(!box) return;
+
+  // 从alloc中提取各类资产比例（5%递进，整数显示）
+  const stockPct=Math.round(alloc['股票(权益类)']?.pct)||35;
+  const commodityPct=Math.round(alloc['大宗商品']?.pct)||15;
+  const cashPct=Math.round(alloc['现金/短债']?.pct)||20;
+  const bondPct=Math.round(alloc['长债']?.pct)||30;
+
+  box.innerHTML=`
+    <!-- ====== 第一部分：理念起源 ====== -->
+    <div style="background:linear-gradient(135deg,#1a365d 0%,#2c5282 100%);color:#fff;border-radius:10px;padding:20px;margin-bottom:20px">
+      <div style="font-size:16px;font-weight:700;margin-bottom:8px">📡 全天候组合：穿越经济四季的永久配置</div>
+      <div style="font-size:13px;line-height:1.8;opacity:.9">
+        全天候策略源自桥水基金创始人<b>瑞·达里欧（Ray Dalio）</b>。他研究发现，经济运行如同四季交替——复苏、过热、滞涨、衰退循环往复，
+        每个阶段都有一类资产表现最优。将<b>四大类资产</b>按固定比例同时持有，就能在任何经济季节中都有资产"开花结果"，
+        实现<b>不预测市场、不择时、穿越牛熊</b>的长期稳健收益。
+      </div>
+      <div style="margin-top:10px;padding:8px 12px;background:rgba(201,168,76,.2);border-radius:6px;font-size:12px">
+        💡 <b>回测数据：</b>过去10年，该组合年化收益率约<b>6.71%</b>，最大回撤仅<b>17.55%</b>，表现稳定优越。
+      </div>
+    </div>
+
+    <!-- ====== 第二部分：美林时钟四季节 ====== -->
+    <div style="margin-bottom:20px">
+      <div style="font-size:15px;font-weight:700;color:var(--c-primary);margin-bottom:12px">🔄 美林时钟：经济的四个季节</div>
+      <div style="font-size:12px;color:var(--c-text-sec);margin-bottom:14px">
+        经济周期遵循"复苏→过热→滞涨→衰退→再复苏"的循环。我们无法精准预测当下处于哪个季节，
+        但<b>同时持有四类资产</b>，就永远不会错过任何一个季节的收益。
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+
+        <!-- 春 -->
+        <div style="border:2px solid #48bb78;border-radius:10px;padding:14px;background:#f0fff4">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+            <span style="font-size:24px">🌱</span>
+            <div>
+              <div style="font-weight:700;color:#2f855a;font-size:14px">春 · 复苏期</div>
+              <div style="font-size:11px;color:var(--c-text-sec)">经济回暖，企业盈利上升</div>
+            </div>
+          </div>
+          <div style="background:#48bb78;color:#fff;padding:6px 12px;border-radius:6px;font-size:13px;font-weight:600;text-align:center">
+            📈 股票（权益类）表现最优
+          </div>
+          <div style="font-size:11px;color:var(--c-text-sec);margin-top:6px;line-height:1.5">
+            利率低位、企业盈利改善，股市迎来上涨行情
+          </div>
+        </div>
+
+        <!-- 夏 -->
+        <div style="border:2px solid #ed8936;border-radius:10px;padding:14px;background:#fffbeb">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+            <span style="font-size:24px">☀️</span>
+            <div>
+              <div style="font-weight:700;color:#c05621;font-size:14px">夏 · 过热期</div>
+              <div style="font-size:11px;color:var(--c-text-sec)">需求旺盛，物价持续上涨</div>
+            </div>
+          </div>
+          <div style="background:#ed8936;color:#fff;padding:6px 12px;border-radius:6px;font-size:13px;font-weight:600;text-align:center">
+            🛢️ 大宗商品表现最优
+          </div>
+          <div style="font-size:11px;color:var(--c-text-sec);margin-top:6px;line-height:1.5">
+            通胀加速，黄金、原油等实物资产价格攀升
+          </div>
+        </div>
+
+        <!-- 秋 -->
+        <div style="border:2px solid #718096;border-radius:10px;padding:14px;background:#f7fafc">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+            <span style="font-size:24px">🍂</span>
+            <div>
+              <div style="font-weight:700;color:#4a5568;font-size:14px">秋 · 滞涨期</div>
+              <div style="font-size:11px;color:var(--c-text-sec)">经济停滞，通胀居高不下</div>
+            </div>
+          </div>
+          <div style="background:#718096;color:#fff;padding:6px 12px;border-radius:6px;font-size:13px;font-weight:600;text-align:center">
+            💵 现金/短债表现最优
+          </div>
+          <div style="font-size:11px;color:var(--c-text-sec);margin-top:6px;line-height:1.5">
+            股债双杀，持有现金等待机会是最优选择
+          </div>
+        </div>
+
+        <!-- 冬 -->
+        <div style="border:2px solid #3182ce;border-radius:10px;padding:14px;background:#ebf8ff">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+            <span style="font-size:24px">❄️</span>
+            <div>
+              <div style="font-weight:700;color:#2c5282;font-size:14px">冬 · 衰退期</div>
+              <div style="font-size:11px;color:var(--c-text-sec)">经济下行，央行降息刺激</div>
+            </div>
+          </div>
+          <div style="background:#3182ce;color:#fff;padding:6px 12px;border-radius:6px;font-size:13px;font-weight:600;text-align:center">
+            🏦 长债表现最优
+          </div>
+          <div style="font-size:11px;color:var(--c-text-sec);margin-top:6px;line-height:1.5">
+            降息周期中，已持有的长期债券价格上涨
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ====== 第三部分：四类资产配置表 ====== -->
+    <div style="margin-bottom:20px">
+      <div style="font-size:15px;font-weight:700;color:var(--c-primary);margin-bottom:10px">📊 四大类资产配置方案</div>
+      <table class="alloc-table" style="width:100%">
+        <thead>
+          <tr><th>资产类别</th><th>推荐区间</th><th>当前建议</th><th>核心作用</th><th>代表标的</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#3182ce;margin-right:6px"></span>股票（权益类）</td>
+            <td style="font-weight:600;color:var(--c-primary)">30-40%</td>
+            <td style="font-weight:700;color:#3182ce">${stockPct}%</td>
+            <td style="font-size:12px">经济增长期的核心收益引擎</td>
+            <td style="font-size:12px;color:var(--c-text-sec)">沪深300ETF、红利ETF</td>
+          </tr>
+          <tr>
+            <td><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#ed8936;margin-right:6px"></span>大宗商品</td>
+            <td style="font-weight:600;color:var(--c-primary)">15-20%</td>
+            <td style="font-weight:700;color:#ed8936">${commodityPct}%</td>
+            <td style="font-size:12px">通胀对冲，抗货币贬值</td>
+            <td style="font-size:12px;color:var(--c-text-sec)">黄金ETF、原油ETF</td>
+          </tr>
+          <tr>
+            <td><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#69c0ff;margin-right:6px"></span>现金/短债</td>
+            <td style="font-weight:600;color:var(--c-primary)">15-20%</td>
+            <td style="font-weight:700;color:#69c0ff">${cashPct}%</td>
+            <td style="font-size:12px">流动性储备，滞涨期"现金为王"</td>
+            <td style="font-size:12px;color:var(--c-text-sec)">货币基金、短债基金</td>
+          </tr>
+          <tr>
+            <td><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#63b3ed;margin-right:6px"></span>长债</td>
+            <td style="font-weight:600;color:var(--c-primary)">20-40%</td>
+            <td style="font-weight:700;color:#63b3ed">${bondPct}%</td>
+            <td style="font-size:12px">衰退期防御，降息时涨价增值</td>
+            <td style="font-size:12px;color:var(--c-text-sec)">国债ETF、长期纯债基金</td>
+          </tr>
+        </tbody>
+      </table>
+      <div style="margin-top:8px;padding:8px 12px;background:var(--c-bg);border-radius:6px;font-size:12px;color:var(--c-text-sec)">
+        ⚠️ <b>安全排序：</b>现金短债 ＞ 长债 ＞ 股票 ＞ 大宗商品。高风险资产占比不宜过大，现金与长债合计不低于40%。
+      </div>
+    </div>
+
+    <!-- ====== 第四部分：再平衡策略详解 ====== -->
+    <div style="margin-bottom:20px">
+      <div style="font-size:15px;font-weight:700;color:var(--c-primary);margin-bottom:10px">⚖️ 季度/年度再平衡：卖涨买跌的自动赚钱机制</div>
+
+      <div style="background:var(--c-bg);border-radius:10px;padding:16px;margin-bottom:12px">
+        <div style="font-weight:600;font-size:13px;margin-bottom:8px;color:var(--c-primary)">什么是再平衡？</div>
+        <div style="font-size:13px;line-height:1.7;color:var(--c-text)">
+          再平衡就是<b>定期将各类资产的比例恢复到初始设定值</b>。每隔一个季度（或一年），检查四类资产的实际占比，
+          把<b>涨多了的卖掉一部分</b>，把<b>跌多了的补上一部分</b>——本质就是机械式"低买高卖"。
+        </div>
+      </div>
+
+      <div style="border:1px solid var(--c-accent);border-radius:10px;padding:16px;background:#fffbeb">
+        <div style="font-weight:600;font-size:13px;margin-bottom:10px;color:var(--c-primary)">📌 具体操作示例</div>
+        <div style="font-size:13px;line-height:1.7">
+          假设初始配置：大宗商品占比 <b>20%</b>。一年后，黄金大涨，大宗商品实际占比升至 <b>30%</b>。
+          <div style="margin:10px 0;padding:10px 12px;background:#fff;border-radius:6px;border-left:3px solid var(--c-accent)">
+            <b>操作：</b>卖出占总资产 <b>10%</b> 的大宗商品（把涨的部分兑现），<br>
+            <b>同时</b>用这笔钱买入占比低于目标的资产（比如股票从35%跌到了30%，就补仓5%），<br>
+            <b>结果：</b>所有资产回到初始比例，自动完成"卖高买低"。
+          </div>
+          <div style="font-size:12px;color:var(--c-text-sec);margin-top:6px">
+            💡 每个季度末操作一次（3月/6月/9月/12月底），或每年底操作一次。操作频率不宜太高，避免交易成本侵蚀收益。
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ====== 第五部分：再平衡 vs 定投 ====== -->
+    <div style="margin-bottom:20px">
+      <div style="font-size:15px;font-weight:700;color:var(--c-primary);margin-bottom:10px">🔄 再平衡 vs 定投：为什么选择再平衡？</div>
+      <table class="alloc-table" style="width:100%">
+        <thead>
+          <tr><th style="width:20%">对比维度</th><th style="width:40%">再平衡策略 ✅</th><th style="width:40%">定投策略</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="font-weight:600">决策数量</td>
+            <td style="color:var(--c-success)"><b>极少</b>：只需设定比例，定期恢复即可</td>
+            <td style="color:var(--c-text-sec)">很多：选标的、定金额、判断买卖时机</td>
+          </tr>
+          <tr>
+            <td style="font-weight:600">入场时机</td>
+            <td style="color:var(--c-success)"><b>任何时间</b>均可入场，按比例买入即可</td>
+            <td style="color:var(--c-text-sec)">需判断市场高低位，择时困难</td>
+          </tr>
+          <tr>
+            <td style="font-weight:600">退出方式</td>
+            <td style="color:var(--c-success)"><b>按比例卖出</b>，无需判断退出时机</td>
+            <td style="color:var(--c-text-sec)">不知道何时止盈、如何分批退出</td>
+          </tr>
+          <tr>
+            <td style="font-weight:600">标的数量</td>
+            <td style="color:var(--c-success)"><b>仅4-5个ETF</b>，简单清晰</td>
+            <td style="color:var(--c-text-sec)">需不断研究新标的，容易分散</td>
+          </tr>
+          <tr>
+            <td style="font-weight:600">核心机制</td>
+            <td style="color:var(--c-success)"><b>卖涨买跌</b>，自动逆向操作</td>
+            <td style="color:var(--c-text-sec)">定期定额，不区分涨跌</td>
+          </tr>
+          <tr>
+            <td style="font-weight:600">心理压力</td>
+            <td style="color:var(--c-success)"><b>极低</b>：纪律化操作，无需盯盘</td>
+            <td style="color:var(--c-text-sec)">较高：涨了想加仓，跌了想停投</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ====== 第六部分：为什么保持固定比例 ====== -->
+    <div style="margin-bottom:20px">
+      <div style="font-size:15px;font-weight:700;color:var(--c-primary);margin-bottom:10px">🤔 为什么不根据经济周期调整比例？</div>
+      <div style="background:#fffbeb;border-radius:10px;padding:14px;font-size:13px;line-height:1.7;color:var(--c-text)">
+        虽然经济周期一定存在四季，但在实际中<b>无法精准预测当前处于哪个阶段</b>。
+        中国的经济调控力度大，美林时钟常常变成"美林电风扇"——转个不停，难以判断身处何处。
+        <br><br>
+        例如2019-2021年，许多人加杠杆买房（属于"春天"股票类资产），结果随后进入夏天甚至冬天，房价暴跌。
+        <b>固定比例 + 定期再平衡</b>，才是最省心、最安全的策略：不错过任何季节，也不会全军覆没。
+      </div>
+    </div>
+
+    <!-- ====== 第七部分：实操建议 ====== -->
+    <div style="background:linear-gradient(135deg,var(--c-primary) 0%,var(--c-primary-light) 100%);color:#fff;border-radius:10px;padding:18px">
+      <div style="font-size:15px;font-weight:700;margin-bottom:10px">🛠️ 实操建议：如何开始？</div>
+      <div style="font-size:13px;line-height:1.9">
+        <div style="margin-bottom:6px"><b>第一步：</b>开通证券账户，选择4-5只低费率ETF（每类资产1-2只即可）</div>
+        <div style="margin-bottom:6px"><b>第二步：</b>按建议比例一次性买入（或分2-3个月逐步建仓）</div>
+        <div style="margin-bottom:6px"><b>第三步：</b>每季度末（或每年底）检查一次实际占比，卖出超配的、买入低配的</div>
+        <div style="margin-bottom:6px"><b>第四步：</b>需要用钱时，按比例从各类资产中卖出即可</div>
+        <div style="margin-top:10px;padding:8px 12px;background:rgba(201,168,76,.25);border-radius:6px;font-size:12px">
+          📌 <b>关键原则：</b>少操作、不择时、不预测、纪律化执行。这个策略简单到可以吃一辈子，也确实应该讲给你的孩子听。
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+/* ---- 保单额度充足性分析 ---- */
+function renderInsuranceAdequacy(){
+  const box=document.getElementById('insuranceAdequacy');
+  if(!box) return;
+
+  // 获取分析数据
+  const income=parseSum('#incomeList');
+  const totalLiab=parseSum('#liabilityList');
+
+  // 解析育儿/赡养支出
+  let raisingExpense=0;
+  document.querySelectorAll('#expenseList .line-item').forEach(item=>{
+    const name=item.querySelector('input:not([type=number])')?.value||'';
+    if(/育儿|赡养/i.test(name)){
+      raisingExpense+=parseFloat(item.querySelector('input[type=number]')?.value)||0;
+    }
+  });
+  const annualRaisingExpense=raisingExpense*12;
+
+  const memberResults=familyMembers.map(m=>calcMemberInsurance(m,totalLiab,parseSum('#expenseList'),annualRaisingExpense));
+
+  if(memberResults.length===0){
+    box.innerHTML='<div style="text-align:center;padding:20px;color:var(--c-text-sec)">暂无家庭成员数据</div>';
+    return;
+  }
+
+  let html='';
+
+  // 逐成员生成分析卡片
+  memberResults.forEach((r,idx)=>{
+    const m=r.member;
+    const annualIncome=m.monthlyIncome*12;
+    const isChild=m.age<=17||!m.isBreadwinner&&m.monthlyIncome===0&&m.relationship==='子女';
+    const isElder=m.relationship==='父母';
+
+    // 重疾险分析
+    const ciNeed=r.criticalIllSuggested;
+    const ciHave=m.existingCriticalIll*10000;
+    const ciStatus=ciHave>=ciNeed?'ok':ciHave>0?'warn':'bad';
+    const ciStatusText=ciStatus==='ok'?'✓ 充足':ciStatus==='warn'?'⚠ 不足':'✗ 缺失';
+
+    // 定期寿险分析（仅经济支柱）
+    let tlHtml='';
+    if(r.needLife){
+      const tlNeed=r.termLifeNeed;
+      const tlHave=m.existingTermLife*10000;
+      const tlStatus=tlHave>=tlNeed?'ok':tlHave>0?'warn':'bad';
+      const tlStatusText=tlStatus==='ok'?'✓ 充足':tlStatus==='warn'?'⚠ 不足':'✗ 缺失';
+      tlHtml=`
+        <tr>
+          <td style="padding:6px 12px">定期寿险</td>
+          <td style="text-align:right;padding:6px 12px">¥${fmt(tlNeed)}</td>
+          <td style="text-align:right;padding:6px 12px">¥${fmt(tlHave)}</td>
+          <td style="text-align:center;padding:6px 12px;color:${tlStatus==='ok'?'var(--c-success)':tlStatus==='warn'?'var(--c-warning)':'var(--c-danger)'};font-weight:600">${tlStatusText}</td>
+        </tr>`;
+    }else{
+      tlHtml=`
+        <tr>
+          <td style="padding:6px 12px">定期寿险</td>
+          <td style="text-align:right;padding:6px 12px;color:var(--c-text-sec)">无需</td>
+          <td style="text-align:right;padding:6px 12px">¥${fmt(m.existingTermLife*10000)}</td>
+          <td style="text-align:center;padding:6px 12px;color:var(--c-text-sec)">— 非经济支柱</td>
+        </tr>`;
+    }
+
+    // 医疗险分析
+    const medHas=m.existingMedical!=='none';
+    const medText=medHas?(m.existingMedical==='mid'?'中端医疗险':m.existingMedical==='high'?'高端医疗险':'百万医疗险'):'未配置';
+    const medStatus=medHas?'ok':'bad';
+    const medStatusText=medHas?'✓ 已配置':'✗ 缺失';
+
+    // 意外险分析
+    const accNeed=r.accidentSuggested;
+    const accHave=m.existingAccident*10000;
+    const accStatus=accHave>=accNeed?'ok':accHave>0?'warn':'bad';
+    const accStatusText=accStatus==='ok'?'✓ 充足':accStatus==='warn'?'⚠ 不足':'✗ 缺失';
+
+    // 缺口汇总
+    const gaps=r.gaps;
+    const gapSummary=gaps.length===0?'<span style="color:var(--c-success);font-weight:600">✓ 保障齐全</span>':
+      gaps.map(g=>`<span style="color:var(--c-danger);font-size:12px">${g.name}缺口¥${fmt(g.need-g.have)}</span>`).join('　');
+
+    html+=`
+      <div style="border:1px solid var(--c-border);border-radius:10px;margin-bottom:14px;overflow:hidden">
+        <div style="background:${isChild?'#f0fff4':isElder?'#fffbeb':'var(--c-primary)'};color:${isChild||isElder?'var(--c-text)':'#fff'};padding:10px 14px;display:flex;justify-content:space-between;align-items:center">
+          <div style="font-weight:700;font-size:14px">${isChild?'👶':isElder?'长辈':'👤'} ${m.name}（${m.relationship}，${m.age}岁）</div>
+          <div style="font-size:12px;opacity:.8">${m.monthlyIncome>0?'年收入 ¥'+fmt(annualIncome):'无收入'}</div>
+        </div>
+        <table class="alloc-table" style="width:100%;font-size:13px">
+          <thead>
+            <tr style="background:var(--c-bg)"><th style="padding:6px 12px">险种</th><th style="text-align:right;padding:6px 12px">建议保额</th><th style="text-align:right;padding:6px 12px">已有保额</th><th style="text-align:center;padding:6px 12px">状态</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="padding:6px 12px">重疾险</td>
+              <td style="text-align:right;padding:6px 12px">¥${fmt(ciNeed)}</td>
+              <td style="text-align:right;padding:6px 12px">¥${fmt(ciHave)}</td>
+              <td style="text-align:center;padding:6px 12px;color:${ciStatus==='ok'?'var(--c-success)':ciStatus==='warn'?'var(--c-warning)':'var(--c-danger)'};font-weight:600">${ciStatusText}</td>
+            </tr>
+            ${tlHtml}
+            <tr>
+              <td style="padding:6px 12px">医疗险</td>
+              <td style="text-align:right;padding:6px 12px;color:var(--c-text-sec)">必配</td>
+              <td style="text-align:right;padding:6px 12px">${medText}</td>
+              <td style="text-align:center;padding:6px 12px;color:${medStatus==='ok'?'var(--c-success)':'var(--c-danger)'};font-weight:600">${medStatusText}</td>
+            </tr>
+            <tr>
+              <td style="padding:6px 12px">意外险</td>
+              <td style="text-align:right;padding:6px 12px">¥${fmt(accNeed)}</td>
+              <td style="text-align:right;padding:6px 12px">¥${fmt(accHave)}</td>
+              <td style="text-align:center;padding:6px 12px;color:${accStatus==='ok'?'var(--c-success)':accStatus==='warn'?'var(--c-warning)':'var(--c-danger)'};font-weight:600">${accStatusText}</td>
+            </tr>
+          </tbody>
+        </table>
+        <div style="padding:8px 14px;background:var(--c-bg);font-size:12px">
+          ${gapSummary}
+        </div>
+      </div>`;
+  });
+
+  // 底部说明
+  html+=`
+    <div style="padding:12px 14px;background:linear-gradient(135deg,var(--c-primary) 0%,var(--c-primary-light) 100%);color:#fff;border-radius:10px;font-size:12px;line-height:1.7">
+      <div style="font-weight:700;margin-bottom:6px">📋 保额标准说明</div>
+      <div>• <b>重疾险</b>：成人建议 ≥ 5倍年收入，未成年人最低30万</div>
+      <div>• <b>定期寿险</b>：经济支柱建议 ≥ 剩余贷款 + 20年养育/赡养支出</div>
+      <div>• <b>医疗险</b>：每位家庭成员均需配置（百万医疗险为基础）</div>
+      <div>• <b>意外险</b>：成人建议 ≥ 5倍年收入；未成年人/老年人保额上限一般20-50万</div>
+    </div>`;
+
+  box.innerHTML=html;
+}
+
+/* ---- 资产负债汇总表 ---- */
+function renderBalanceSheet(){
+  const body=document.getElementById('balanceSheetBody');
+  if(!body) return;
+  const rows=[];
+  let totalAssets=0,totalLiab=0;
+
+  // 资产明细
+  document.querySelectorAll('#assetList .line-item').forEach(item=>{
+    var select=item.querySelector('.asset-cat');
+    var name=select?select.options[select.selectedIndex]?.text||'???':'???';
+    var val=parseFloat(item.querySelector('input[type=number]')?.value)||0;
+    if(val>0){
+      rows.push({type:'asset',name,val});
+      totalAssets+=val;
+    }
+  });
+
+  // 负债明细
+  document.querySelectorAll('#liabilityList .line-item').forEach(item=>{
+    const name=item.querySelector('input:not([type=number])')?.value||'未命名';
+    const val=parseFloat(item.querySelector('input[type=number]')?.value)||0;
+    if(val>0){
+      rows.push({type:'liab',name,val});
+      totalLiab+=val;
+    }
+  });
+
+  const netWorth=totalAssets-totalLiab;
+  let html='';
+
+  // 资产部分
+  html+=`<tr><td colspan="3" style="background:var(--c-primary);color:#fff;font-weight:700;font-size:13px;padding:6px 12px">资产</td></tr>`;
+  rows.filter(r=>r.type==='asset').forEach(r=>{
+    const pct=totalAssets>0?(r.val/totalAssets*100).toFixed(1):'0.0';
+    html+=`<tr><td style="padding-left:24px">${r.name}</td><td style="font-weight:600;color:var(--c-success)">¥${fmt(r.val)}</td><td style="color:var(--c-text-sec)">${pct}%</td></tr>`;
+  });
+  html+=`<tr style="background:var(--c-bg)"><td style="font-weight:700">资产合计</td><td style="font-weight:700;color:var(--c-success)">¥${fmt(totalAssets)}</td><td>100%</td></tr>`;
+
+  // 负债部分
+  html+=`<tr><td colspan="3" style="background:var(--c-danger);color:#fff;font-weight:700;font-size:13px;padding:6px 12px">负债</td></tr>`;
+  rows.filter(r=>r.type==='liab').forEach(r=>{
+    const pct=totalLiab>0?(r.val/totalLiab*100).toFixed(1):'0.0';
+    html+=`<tr><td style="padding-left:24px">${r.name}</td><td style="font-weight:600;color:var(--c-danger)">¥${fmt(r.val)}</td><td style="color:var(--c-text-sec)">${pct}%</td></tr>`;
+  });
+  html+=`<tr style="background:var(--c-bg)"><td style="font-weight:700">负债合计</td><td style="font-weight:700;color:var(--c-danger)">¥${fmt(totalLiab)}</td><td>100%</td></tr>`;
+
+  // 净资产
+  html+=`<tr><td colspan="3" style="background:var(--c-accent);color:#fff;font-weight:700;font-size:13px;padding:6px 12px">家庭净资产</td></tr>`;
+  html+=`<tr style="background:#fffbeb"><td style="font-weight:700;font-size:15px">净资产（资产-负债）</td><td style="font-weight:700;font-size:15px;color:var(--c-primary)">¥${fmt(netWorth)}</td><td style="font-weight:600">${totalAssets>0?(netWorth/totalAssets*100).toFixed(1):'0'}%</td></tr>`;
+
+  body.innerHTML=html;
+}
+
+/* ---- 月度收支结余表 ---- */
+function renderCashFlow(){
+  const body=document.getElementById('cashFlowBody');
+  if(!body) return;
+  let totalIncome=0,totalExpense=0;
+  const incomes=[],expenses=[];
+
+  document.querySelectorAll('#incomeList .line-item').forEach(item=>{
+    const name=item.querySelector('input:not([type=number])')?.value||'未命名';
+    const val=parseFloat(item.querySelector('input[type=number]')?.value)||0;
+    if(val>0){incomes.push({name,val});totalIncome+=val;}
+  });
+  document.querySelectorAll('#expenseList .line-item').forEach(item=>{
+    const name=item.querySelector('input:not([type=number])')?.value||'未命名';
+    const val=parseFloat(item.querySelector('input[type=number]')?.value)||0;
+    if(val>0){expenses.push({name,val});totalExpense+=val;}
+  });
+
+  const surplus=totalIncome-totalExpense;
+  let html='';
+
+  // 收入
+  html+=`<tr><td colspan="4" style="background:var(--c-success);color:#fff;font-weight:700;font-size:13px;padding:6px 12px">月度收入</td></tr>`;
+  incomes.forEach(r=>{
+    const pct=totalIncome>0?(r.val/totalIncome*100).toFixed(1):'0.0';
+    html+=`<tr><td style="padding-left:24px">${r.name}</td><td style="font-weight:600;color:var(--c-success)">¥${fmt(r.val)}</td><td style="color:var(--c-text-sec)">¥${fmt(r.val*12)}</td><td>${pct}%</td></tr>`;
+  });
+  html+=`<tr style="background:var(--c-bg)"><td style="font-weight:700">收入合计</td><td style="font-weight:700;color:var(--c-success)">¥${fmt(totalIncome)}</td><td style="font-weight:700">¥${fmt(totalIncome*12)}</td><td>100%</td></tr>`;
+
+  // 支出
+  html+=`<tr><td colspan="4" style="background:var(--c-danger);color:#fff;font-weight:700;font-size:13px;padding:6px 12px">月度支出</td></tr>`;
+  expenses.forEach(r=>{
+    const pct=totalExpense>0?(r.val/totalExpense*100).toFixed(1):'0.0';
+    html+=`<tr><td style="padding-left:24px">${r.name}</td><td style="font-weight:600;color:var(--c-danger)">¥${fmt(r.val)}</td><td style="color:var(--c-text-sec)">¥${fmt(r.val*12)}</td><td>${pct}%</td></tr>`;
+  });
+  html+=`<tr style="background:var(--c-bg)"><td style="font-weight:700">支出合计</td><td style="font-weight:700;color:var(--c-danger)">¥${fmt(totalExpense)}</td><td style="font-weight:700">¥${fmt(totalExpense*12)}</td><td>100%</td></tr>`;
+
+  // 结余
+  html+=`<tr><td colspan="4" style="background:var(--c-accent);color:#fff;font-weight:700;font-size:13px;padding:6px 12px">月度结余</td></tr>`;
+  const sr=totalIncome>0?(surplus/totalIncome*100).toFixed(1):'0';
+  const surplusColor=surplus>0?'var(--c-success)':'var(--c-danger)';
+  html+=`<tr style="background:#fffbeb"><td style="font-weight:700;font-size:15px">月结余（收入-支出）</td><td style="font-weight:700;font-size:15px;color:${surplusColor}">¥${fmt(surplus)}</td><td style="font-weight:600">¥${fmt(surplus*12)}</td><td style="font-weight:600">${sr}%</td></tr>`;
+
+  body.innerHTML=html;
+}
+
+/* ---- 雷达图（含含义与区间判断 · 三大分类） ---- */
+function renderRadarChart(detail,metrics){
+  // 使用实际指标数据，归一化到0-100（100=最优）
+  const labels=['储蓄率','保费支出比例','保险安全度','流动性','月度偿债管理','清偿率','投资资产占比','财务自由度'];
+
+  const s=metrics.sr||0, p=metrics.ipr||0, is=metrics.is||0;
+  const l=metrics.liq||0, d=metrics.dti||0, sv=(metrics.sv||0)*100;
+  const ir=metrics.ir||0, ff=metrics.ff||0;
+
+  const data=[
+    Math.max(0,Math.min(100, s/30*100)),                     // 储蓄率: 30%为满分（与评分标准一致）
+    p===0 && is===0 ? 30 : Math.max(0,(1-p/25)*100),        // 保费支出比例: 0%且无保险=30，否则线性(5%=80, 10%=60, 25%=0)
+    Math.max(0,Math.min(100, is)),                           // 保险安全度: 80%以上为优
+    l>=3&&l<=6 ? 100 : l<3 ? l/3*80 : Math.max(0,(12-l)/6*80), // 流动性: 3-6月最优
+    Math.max(0, (1 - d/100)*100),                             // 月度偿债管理: 越低越好，100%DTI为0分
+    sv>=60&&sv<=70 ? 100 : sv<60 ? sv/60*80 : Math.max(0,(100-sv)/30*80), // 清偿率: 60-70%最优
+    Math.max(0,Math.min(100, ir/50*100)),                    // 投资资产占比: 50%为满分
+    Math.max(0,Math.min(100, ff))                            // 财务自由度: 100%为满分
+  ];
+
+  if(charts.radar) charts.radar.destroy();
+  charts.radar=new Chart(document.getElementById('radarChart'),{
+    type:'radar',
+    data:{labels,datasets:[{
+      label:'健康度(%)',data,
+      backgroundColor:'rgba(201,168,76,.2)',
+      borderColor:'rgba(201,168,76,1)',
+      pointBackgroundColor:'rgba(201,168,76,1)',
+      borderWidth:2,pointRadius:4
+    }]},
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      scales:{r:{beginAtZero:true,max:100,ticks:{stepSize:25,font:{size:10}},
+        pointLabels:{font:{size:11}}}},
+      plugins:{legend:{display:false}}
+    }
+  });
+
+  // 雷达图维度详情表（含义 + 区间判断 + 三大分类 · 分类列合并）
+  const dimGroups=[
+    {cat:'财务安全指标',rows:[
+      {key:'储蓄率',meaning:'月结余占月收入比例，反映储蓄能力',value:s.toFixed(1)+'%',range:'≥20%合理 / ≥30%优秀',isOk:s>=20},
+      {key:'保费支出比例',meaning:'年保费占年收入比例，建议＜10%',value:p.toFixed(1)+'%',range:'<10%合理 / <15%警戒',isOk:p<=10},
+      {key:'保险安全度',meaning:'保单配置完善程度（覆盖/需求）',value:is.toFixed(0)+'%',range:'≥80%完善 / ≥60%基本',isOk:is>=60}
+    ]},
+    {cat:'债务管理指标',rows:[
+      {key:'流动性',meaning:'流动资产可覆盖月支出的月数',value:l.toFixed(1)+'个月',range:'3-12个月合理',isOk:l>=3&&l<=12},
+      {key:'月度偿债管理',meaning:'月还款占月收入比例，反映偿债压力',value:d.toFixed(1)+'%',range:'<36%合理 / <50%警戒',isOk:d<36},
+      {key:'清偿率',meaning:'净资产占总资产比例，反映资产负债健康度',value:sv.toFixed(1)+'%',range:'60%-70%最优 / >40%合理',isOk:sv>=40&&sv<=90}
+    ]},
+    {cat:'财务自由指标',rows:[
+      {key:'投资资产占比',meaning:'投资资产占总资产比例，反映增值能力',value:ir.toFixed(1)+'%',range:'≥30%合理 / ≥50%优秀',isOk:ir>=30},
+      {key:'财务自由度',meaning:'被动收入覆盖月支出的比例',value:ff.toFixed(1)+'%',range:'≥30%合理 / ≥100%自由',isOk:ff>=30}
+    ]}
+  ];
+
+  const tbl=document.getElementById('radarDetailTable');
+  if(tbl){
+    let html=`<table class="alloc-table" style="font-size:12px">
+        <thead>
+          <tr><th style="width:10%">分类</th><th style="width:15%">维度</th><th style="width:26%">含义</th><th style="width:14%">当前值</th><th style="width:22%">合理区间</th><th style="width:13%">状态</th></tr>
+        </thead>
+        <tbody>`;
+
+    dimGroups.forEach((group,gIdx)=>{
+      group.rows.forEach((d,rIdx)=>{
+        html+=`<tr>`;
+        if(rIdx===0){
+          html+=`<td rowspan="${group.rows.length}" style="font-weight:700;color:var(--c-primary);font-size:11px;vertical-align:middle;border-right:2px solid var(--c-accent)">${group.cat}</td>`;
+        }
+        html+=`
+              <td style="font-weight:600;color:var(--c-primary)">${d.key}</td>
+              <td style="color:var(--c-text-sec)">${d.meaning}</td>
+              <td style="font-weight:600">${d.value}</td>
+              <td style="color:var(--c-text-sec);font-size:11px">${d.range}</td>
+              <td>${d.isOk
+                ?'<span style="color:var(--c-success);font-weight:600">✓ 合理</span>'
+                :'<span style="color:var(--c-danger);font-weight:600">⚠ 需关注</span>'}</td>
+            </tr>`;
+      });
+    });
+
+    html+=`</tbody></table>`;
+    tbl.innerHTML=html;
+  }
+}
+
+/* ---- 资产增长预测图（草帽图：3.5%年化·积累+退休消耗·5年标注） ---- */
+function renderROIChart(principal,monthlyContribution,workYears,currentAge,retireAge,monthlyExpense){
+  const endAge=90;
+  const totalYears=endAge-currentAge;
+  const labels=[];
+  const growth=[];      // 积累期（3.5%年化）
+  const decumulation=[]; // 退休后消耗曲线
+
+  const annualExpense=(monthlyExpense||0)*12;
+  const rate=0.035; // 统一3.5%年化
+
+  // 计算退休时点资产峰值
+  const retireAsset=Engine.futureValue(principal,monthlyContribution,rate,workYears);
+
+  for(let y=0;y<=totalYears;y++){
+    const ageNow=currentAge+y;
+    labels.push(ageNow+'岁');
+    if(y<=workYears){
+      // 积累期：定投+复利（3.5%）
+      const val=Engine.futureValue(principal,monthlyContribution,rate,y);
+      growth.push(Math.round(val));
+      decumulation.push(null);
+    }else{
+      // 消耗期：退休后，从退休时点资产开始，每年扣除生活费，剩余按3.5%增长
+      const yearsAfterRetire=y-workYears;
+      let val=retireAsset;
+      for(let d=1;d<=yearsAfterRetire;d++){
+        val=val*(1+rate)-annualExpense;
+        if(val<0) val=0;
+      }
+      growth.push(null);
+      decumulation.push(Math.round(val));
+    }
+  }
+
+  // 生成每5年标注的数据点
+  const annotations=[];
+  for(let y=0;y<=totalYears;y++){
+    const ageNow=currentAge+y;
+    if(ageNow%5===0||y===0){
+      let val=null;
+      if(y<=workYears){
+        val=growth[y];
+      }else{
+        val=decumulation[y];
+      }
+      if(val!==null&&val!==undefined){
+        annotations.push({age:ageNow,value:val,index:y});
+      }
+    }
+  }
+
+  if(charts.roi) charts.roi.destroy();
+  charts.roi=new Chart(document.getElementById('roiChart'),{
+    type:'line',
+    data:{labels,datasets:[
+      {label:'资产积累（3.5%/年）',data:growth,borderColor:'#c9a84c',backgroundColor:'rgba(201,168,76,.12)',fill:true,borderWidth:2.5,pointRadius:0},
+      {label:'退休后消耗',data:decumulation,borderColor:'#e53e3e',backgroundColor:'rgba(229,62,62,.08)',fill:false,borderWidth:2,borderDash:[6,4],pointRadius:0}
+    ]},
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend:{position:'top',labels:{font:{size:12}}},
+        tooltip:{callbacks:{label:(ctx)=>ctx.dataset.label+': ¥'+fmt(ctx.parsed.y||0)}}
+      },
+      scales:{
+        y:{ticks:{callback:v=>'¥'+fmt(v)},grid:{color:'#f0f0f0'}},
+        x:{grid:{display:false},ticks:{maxTicksLimit:12}}
+      }
+    },
+    // 自定义插件：在每次绘制后叠加5年标注
+    plugins:[{
+      id:'roiAnnotations',
+      afterDatasetsDraw(chart){
+        const ctx=chart.ctx;
+        const meta=chart.getDatasetMeta(0);
+        const meta2=chart.getDatasetMeta(1);
+        ctx.save();
+        ctx.font='bold 11px sans-serif';
+        ctx.textAlign='center';
+        annotations.forEach(a=>{
+          let point=null;
+          if(a.index<=workYears&&meta.data[a.index]){
+            point=meta.data[a.index];
+          }else if(meta2.data[a.index]){
+            point=meta2.data[a.index];
+          }
+          if(point){
+            const x=point.x;
+            const y=point.y;
+            const label='¥'+fmt(a.value);
+            // 标注背景
+            ctx.fillStyle=a.age<retireAge?'rgba(201,168,76,.9)':'rgba(229,62,62,.85)';
+            const w=ctx.measureText(label).width+10;
+            ctx.fillRect(x-w/2,y-22,w,16);
+            // 标注文字
+            ctx.fillStyle='#fff';
+            ctx.fillText(label,x,y-10);
+            // 年龄标注
+            ctx.fillStyle='#718096';
+            ctx.font='10px sans-serif';
+            ctx.fillText(a.age+'岁',x,y-26);
+            ctx.font='bold 11px sans-serif';
+          }
+        });
+        ctx.restore();
+      }
+    }]
+  });
+}
+
+/* ---- 目标达成分析 ---- */
+function renderGoalAnalysis(investAssets,surplus){
+  var body=document.getElementById('goalTableBody');
+  var riskReturn={short:0.02,mid:0.035,long:0.065};
+  var goalCount=goals.length||1;
+  // 总投资资产按目标数量均分，作为各目标可用本金基准
+  var sharedPrincipal=investAssets/goalCount;
+
+  var rows=goals.map(function(g){
+    var rate=riskReturn[g.type]||0.05;
+    // 已储备取用户填写值和均分投资资产的较大者
+    var effectiveExisting=Math.max(g.existing||0,sharedPrincipal);
+    var required=Engine.requiredMonthlyContribution(g.amount,effectiveExisting,rate,g.years);
+    var pv=Engine.presentValue(g.amount,rate,g.years);
+    var canAfford=surplus>=required;
+    var inflationAdjusted=Engine.inflate(g.amount,0.03,g.years);
+
+    var probability;
+    if(surplus>=required*1.5) probability='>90%';
+    else if(surplus>=required*1.2) probability='75-90%';
+    else if(surplus>=required) probability='50-75%';
+    else if(surplus>=required*0.7) probability='25-50%';
+    else probability='<25%';
+
+    var status=canAfford?'<span style="color:var(--c-success);font-weight:600">\u2713 \u53EF\u8FBE\u6210</span>':
+      '<span style="color:var(--c-danger);font-weight:600">\u26A0 \u9700\u8C03\u6574</span>';
+
+    var existingNote=g.existing>0?'（\u5DF2\u50A8'+fmt(g.existing)+'）':'';
+
+    return '<tr>'
+      +'<td><b>'+g.name+'</b></td>'
+      +'<td>'+(g.type==='short'?'\u77ED\u671F':g.type==='mid'?'\u4E2D\u671F':'\u957F\u671F')+'('+g.years+'\u5E74)</td>'
+      +'<td>\u00A5'+fmt(g.amount)+'<br><span style="font-size:11px;color:var(--c-text-sec)">\u901A\u80C0\u540E:\u00A5'+fmt(inflationAdjusted)+'</span></td>'
+      +'<td style="font-weight:600;color:'+(canAfford?'var(--c-success)':'var(--c-danger)')+'" >\u00A5'+fmtFull(required)+'/\u6708</td>'
+      +'<td>\u00A5'+fmt(pv)+'</td>'
+      +'<td>\u00A5'+fmt(effectiveExisting)+existingNote+'</td>'
+      +'<td>'+probability+'</td>'
+      +'<td>'+status+'</td>'
+      +'</tr>';
+  });
+
+  var headerRow='';
+  if(investAssets>0){
+    headerRow='<tr style="background:#fffbeb">'
+      +'<td colspan="9" style="padding:8px 12px;font-size:12px;color:var(--c-accent);font-weight:600">'
+      +'\uD83D\uDCB0 \u60A8\u5F53\u524D\u5171\u6709\u6295\u8D44\u8D44\u4EA7 \u00A5'+fmt(investAssets)
+      +'\uFF0C\u6309'+goalCount+'\u4E2A\u76EE\u6807\u5747\u5206\uFF0C\u6BCF\u4E2A\u76EE\u6807\u53EF\u7528\u672C\u91D1\u00A5'+fmt(sharedPrincipal)
+      +'</td></tr>';
+  }
+
+  body.innerHTML=headerRow+rows.join('');
+}
+
+/* ---- 理财规划综合点评 ---- */
+function renderComprehensiveReview(health,metrics,fin){
+  var el=document.getElementById('comprehensiveReview');
+  if(!el) return;
+
+  var score=health.total;
+  var grade=score>=80?'A\uFF08\u4F18\u79C0\uFF09':score>=60?'B\uFF08\u826F\u597D\uFF09':score>=40?'C\uFF08\u9700\u6539\u5584\uFF09':'D\uFF08\u4E9F\u9700\u6539\u5584\uFF09';
+  var gradeColor=score>=80?'var(--c-success)':score>=60?'var(--c-accent)':score>=40?'var(--c-warning)':'var(--c-danger)';
+  var gradeBg=score>=80?'#f0fff4':score>=60?'#fffbeb':score>=40?'#fffaf0':'#fff5f5';
+
+  var dims=[
+    {name:'\u50A8\u84C4\u7387',val:metrics.sr,score:health.detail['\u50A8\u84C4\u7387'],max:12,unit:'%',good:metrics.sr>=20},
+    {name:'\u4FDD\u8D39\u652F\u51FA\u6BD4\u4F8B',val:metrics.ipr,score:health.detail['\u4FDD\u8D39\u652F\u51FA\u6BD4\u4F8B'],max:12,unit:'%',good:metrics.ipr<=10&&metrics.ipr>0},
+    {name:'\u4FDD\u9669\u5B89\u5168\u5EA6',val:metrics.is,score:health.detail['\u4FDD\u9669\u5B89\u5168\u5EA6'],max:12,unit:'%',good:metrics.is>=60},
+    {name:'\u6D41\u52A8\u6027',val:metrics.liq,score:health.detail['\u6D41\u52A8\u6027'],max:12,unit:'\u4E2A\u6708',good:metrics.liq>=3&&metrics.liq<=12},
+    {name:'\u6708\u5EA6\u507F\u503A\u7BA1\u7406',val:metrics.dti,score:health.detail['\u6708\u5EA6\u507F\u503A\u7BA1\u7406'],max:10,unit:'%',good:metrics.dti<36},
+    {name:'\u6E05\u507F\u7387',val:(metrics.sv*100),score:health.detail['\u6E05\u507F\u7387'],max:10,unit:'%',good:metrics.sv>=0.4&&metrics.sv<=0.9},
+    {name:'\u6295\u8D44\u8D44\u4EA7\u5360\u6BD4',val:metrics.ir,score:health.detail['\u6295\u8D44\u8D44\u4EA7\u5360\u6BD4'],max:16,unit:'%',good:metrics.ir>=30},
+    {name:'\u8D22\u52A1\u81EA\u7531\u5EA6',val:metrics.ff,score:health.detail['\u8D22\u52A1\u81EA\u7531\u5EA6'],max:16,unit:'%',good:metrics.ff>=30}
+  ];
+
+  var strengths=dims.filter(function(d){return d.good;});
+  var risks=dims.filter(function(d){return !d.good;});
+
+  var s=metrics.sr.toFixed(1), isVal=metrics.is.toFixed(0), l=metrics.liq.toFixed(1);
+  var d=metrics.dti.toFixed(1), ir=metrics.ir.toFixed(1), ff=metrics.ff.toFixed(1);
+  var inc=fmt(fin.income), sur=fmt(fin.surplus), nw=fmt(fin.netWorth);
+  var exp=fmt(fin.expense), ia=fmt(fin.investAssets);
+
+  var assessment='';
+  if(score>=80){
+    assessment='整体财务状况优秀，月收入'+inc+'、月结余'+sur+'，储蓄率'+s+'%处于健康水平。净资产'+nw+'，资产负债结构合理。建议在保持现有良好习惯的基础上，持续优化资产配置，向财务自由迈进。';
+  }else if(score>=60){
+    var riskNames=risks.length>0?risks.map(function(r){return r.name;}).join('、'):'';
+    assessment='整体财务状况良好但仍有提升空间。月结余'+sur+'（储蓄率'+s+'%），'+(risks.length>0?'需重点关注'+riskNames+'等'+risks.length+'项指标。':'')+'建议在巩固优势的同时，针对性地补齐短板，提升整体财务韧性。';
+  }else if(score>=40){
+    var surplusMsg=fin.surplus>0?'月结余'+sur+'。':'月度收支基本持平或入不敷出。';
+    var riskMsg2=risks.length>0?risks.length+'项指标未达� �（'+risks.map(function(r){return r.name;}).join('、')+'），':'';
+    assessment='整体财务状况需改善。当前月收入'+inc+'、月支出'+exp+'，'+surplusMsg+riskMsg2+'建议优先解决保障缺口和流动性问题，逐步建立健康的财务结构。';
+  }else{
+    var urgentMsg=fin.surplus<=0?'月度入不敷出，需立即削减非必要支出或增加收入来源。':'储蓄率仅'+s+'%，低于健康水平。';
+    var isMsg=metrics.is<40?'家庭保障严重不足，':'';
+    var liqMsg=metrics.liq<3?'流动性紧张，':'';
+    assessment='整体财务状况亟需改善。'+urgentMsg+' '+isMsg+liqMsg+'建议从紧急备用金、基础保障、债务管理三个方向同步着手，尽快建立财务安全底线。';
+  }
+
+  var actions=[];
+  if(metrics.liq<3) actions.push('建立3-6个月紧急备用金（当前流动性仅'+l+'个月）');
+  if(metrics.is<60) actions.push('完善家庭保障配置（保险安全度'+isVal+'%），优先配置重疾险和医疗险');
+  if(metrics.sr<20) actions.push('提升储蓄率至20%以上（当前'+s+'%），建议采用\u201C先存后花\u201D策略');
+  if(metrics.dti>=50) actions.push('控制月度偿债比例（当前'+d+'%），考虑债务重组或提前还款');
+  if(metrics.ir<30) actions.push('增加投资资产配置（当前占比'+ir+'%），从低风险产品起步');
+  if(metrics.ff<15) actions.push('建立被动收入来源，逐步提升财务自由度（当前'+ff+'%）');
+  if(actions.length===0) actions.push('保持现有良好财务习惯，持续优化资产配置结构');
+
+  var freedomTarget=fin.expense*12/0.04;
+  var freedomProgress=fin.investAssets>0?(fin.investAssets/freedomTarget*100):0;
+
+  var strengthsHtml='';
+  if(strengths.length>0){
+    strengthsHtml=strengths.map(function(d){
+      return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:12px"><span style="color:var(--c-success);font-weight:600">'+d.name+'</span><span style="color:var(--c-text-sec)">'+d.val.toFixed(1)+d.unit+'</span><span style="color:var(--c-success)">得分'+d.score+'/'+d.max+'</span></div>';
+    }).join('');
+  }else{
+    strengthsHtml='<div style="font-size:12px;color:var(--c-text-sec)">暂无达标维度，建议从基础保障做起</div>';
+  }
+
+  var risksHtml='';
+  if(risks.length>0){
+    risksHtml=risks.map(function(d){
+      return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:12px"><span style="color:var(--c-danger);font-weight:600">'+d.name+'</span><span style="color:var(--c-text-sec)">'+d.val.toFixed(1)+d.unit+'</span><span style="color:var(--c-danger)">得分'+d.score+'/'+d.max+'</span></div>';
+    }).join('');
+  }else{
+    risksHtml='<div style="font-size:12px;color:var(--c-success)">所有维度均达标，继续保持！</div>';
+  }
+
+  var actionsHtml=actions.map(function(a){return '<li>'+a+'</li>';}).join('');
+
+  var fpMsg=freedomProgress>0?'（已积累投资资产'+ia+'）':'';
+  var yearsToFree=calcYearsToFreedom(fin.investAssets,fin.expense,fin.surplus);
+  var yearsMsg=fin.investAssets>0?'预计'+yearsToFree+'年达到财务自由':'';
+
+  el.innerHTML='<div style="display:flex;gap:16px;margin-bottom:16px;flex-wrap:wrap">'
+    +'<div style="flex:1;min-width:200px;background:'+gradeBg+';border-radius:12px;padding:20px;text-align:center">'
+    +'<div style="font-size:13px;color:var(--c-text-sec);margin-bottom:6px">综合财务健康评分</div>'
+    +'<div style="font-size:42px;font-weight:800;color:'+gradeColor+';line-height:1">'+score+'</div>'
+    +'<div style="font-size:14px;font-weight:700;color:'+gradeColor+';margin-top:6px">'+grade+'</div>'
+    +'<div style="font-size:11px;color:var(--c-text-sec);margin-top:4px">满分100 \u00B7 三大类8项指标</div>'
+    +'</div>'
+    +'<div style="flex:2;min-width:300px">'
+    +'<div style="font-size:14px;font-weight:700;color:var(--c-primary);margin-bottom:8px">综合诊断</div>'
+    +'<div style="font-size:13px;line-height:1.7;color:var(--c-text-sec)">'+assessment+'</div>'
+    +'<div style="margin-top:10px;font-size:12px;color:var(--c-text-sec)">'
+    +'财务自由目标：'+fmt(freedomTarget)+' \u00B7 当前进度：<span style="font-weight:600;color:var(--c-accent)">'+freedomProgress.toFixed(1)+'%</span>'+fpMsg
+    +(yearsMsg?'<br>'+yearsMsg:'')
+    +'</div></div></div>'
+    +'<div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:16px">'
+    +'<div style="flex:1;min-width:280px">'
+    +'<div style="font-size:14px;font-weight:700;color:var(--c-success);margin-bottom:10px">表现良好的维度（'+strengths.length+'项）</div>'
+    +strengthsHtml
+    +'</div>'
+    +'<div style="flex:1;min-width:280px">'
+    +'<div style="font-size:14px;font-weight:700;color:var(--c-danger);margin-bottom:10px">需关注的维度（'+risks.length+'项）</div>'
+    +risksHtml
+    +'</div></div>'
+    +'<div style="background:#f7fafc;border-radius:10px;padding:16px">'
+    +'<div style="font-size:14px;font-weight:700;color:var(--c-primary);margin-bottom:10px">优先行动建议</div>'
+    +'<ol style="margin:0;padding-left:20px;font-size:13px;line-height:1.8;color:var(--c-text-sec)">'
+    +actionsHtml
+    +'</ol></div>';
+}
+
+/* ---- 计算达到财务自由所需年数 ----
+   目标: 投资资产增长至 月支出×12 / 4% = 25倍年支出
+   公式: 用复利递推计算年数 */
+function calcYearsToFreedom(investAssets,monthlyExpense,monthlySurplus){
+  const target=monthlyExpense*12/0.04; // 4%规则
+  if(investAssets>=target) return 0;
+  let assets=investAssets;
+  const monthlyInvest=monthlySurplus*0.6; // 60%结余用于投资
+  for(let y=1;y<=60;y++){
+    assets=assets*1.035+monthlyInvest*12; // 3.5%年化
+    if(assets>=target) return y;
+  }
+  return 60;
+}
+
+/* ====================================================================
+   数据持久化（localStorage 自动保存/恢复）
+   ==================================================================== */
+function saveData(){
+  var data={
+    clientAge:document.getElementById('clientAge')?.value||'',
+    clientName:document.getElementById('clientName')?.value||'',
+    retireAge:document.getElementById('retireAge')?.value||'',
+    monthlyDebtPayment:document.getElementById('monthlyDebtPayment')?.value||'',
+    passiveIncome:document.getElementById('passiveIncome')?.value||'',
+    risk:selectedRisk,
+    incomeList:getLineItemData('incomeList'),
+    expenseList:getLineItemData('expenseList'),
+    assetList:getLineItemData('assetList'),
+    liabilityList:getLineItemData('liabilityList'),
+    familyMembers:familyMembers,
+    goals:goals
+  };
+  try{ localStorage.setItem('financePlannerData',JSON.stringify(data)); }
+  catch(e){ /* storage full or unavailable */ }
+}
+
+function getLineItemData(listId){
+  var items=[];
+  var list=document.getElementById(listId);
+  if(!list) return items;
+  list.querySelectorAll('.line-item').forEach(function(item){
+    var catSelect=item.querySelector('.asset-cat');
+    var valInput=item.querySelector('input[type=number]');
+    items.push({
+      name:catSelect?catSelect.value:'',
+      value:valInput?valInput.value:''
+    });
+  });
+  return items;
+}
+
+function loadData(){
+  try{
+    var raw=localStorage.getItem('financePlannerData');
+    if(!raw) return false;
+    var data=JSON.parse(raw);
+
+    if(data.clientAge) document.getElementById('clientAge').value=data.clientAge;
+    if(data.clientName) document.getElementById('clientName').value=data.clientName;
+    if(data.retireAge) document.getElementById('retireAge').value=data.retireAge;
+    if(data.monthlyDebtPayment) document.getElementById('monthlyDebtPayment').value=data.monthlyDebtPayment;
+    if(data.passiveIncome) document.getElementById('passiveIncome').value=data.passiveIncome;
+
+    if(data.risk) selectedRisk=data.risk;
+    if(data.familyMembers){ familyMembers=data.familyMembers; memberIdCounter=familyMembers.length+1; }
+    if(data.goals) goals=data.goals;
+
+    restoreLineItems('incomeList',data.incomeList);
+    restoreLineItems('expenseList',data.expenseList);
+    restoreLineItems('assetList',data.assetList);
+    restoreLineItems('liabilityList',data.liabilityList);
+
+    return true;
+  }catch(e){ return false; }
+}
+
+function restoreLineItems(listId,items){
+  if(!items||items.length===0) return;
+  var list=document.getElementById(listId);
+  if(!list) return;
+  var existingItems=list.querySelectorAll('.line-item');
+  existingItems.forEach(function(item,i){
+    if(i>=items.length) item.remove();
+  });
+  while(list.querySelectorAll('.line-item').length<items.length){
+    var template=list.querySelector('.line-item');
+    if(template){
+      var clone=template.cloneNode(true);
+      clone.querySelectorAll('input').forEach(function(inp){inp.value='';});
+      list.appendChild(clone);
+    }
+  }
+  var currentItems=list.querySelectorAll('.line-item');
+  items.forEach(function(item,i){
+    if(i<currentItems.length){
+      var catSelect=currentItems[i].querySelector('.asset-cat');
+      var valInput=currentItems[i].querySelector('input[type=number]');
+      if(catSelect){
+        var catCode=item.name||'';
+        if(catCode==='self'||catCode==='liquid'||catCode==='invest'||catCode==='other'){
+          catSelect.value=catCode;
+        } else {
+          var name=catCode;
+          if(/自住/i.test(name)) catSelect.value='self';
+          else if(/活期|货币|存款|现金/i.test(name)) catSelect.value='liquid';
+          else if(/股票|基金|理财|债券|投资|贵金属|黄金|大宗商品|现货|房产/i.test(name)) catSelect.value='invest';
+          else catSelect.value='other';
+        }
+      }
+      if(valInput) valInput.value=item.value||'';
+    }
+  });
+}
+
+/* ====================================================================
+   初始化
+   ==================================================================== */
+// 尝试恢复已保存的数据
+var restored=loadData();
+if(!restored){
+  // 首次使用，不做处理，使用默认值
+}
+
+// 恢复风险偏好UI
+if(selectedRisk&&selectedRisk!=='balanced'){
+  var riskCards=document.querySelectorAll('.risk-card');
+  riskCards.forEach(function(c){
+    if(c.dataset.risk===selectedRisk) selectRisk(c);
+  });
+}
+
+// 初始计算
+calcIncome();
+calcExpense();
+calcAssets();
+calcLiabilities();
+renderGoals();
+renderFamilyUI();
+analyzeInsurance();
+
+// 初始汇总
+calcSurplus();
+calcNetWorth();
+</script>
+<div class="mobile-nav-overlay" id="mobileNavOverlay" onclick="toggleMobileNav()"></div>
+<div class="mobile-nav-panel" id="mobileNavPanel">
+  <div class="mobile-nav-header">
+    <span style="font-weight:700;color:var(--c-primary)">理财规划导航</span>
+    <button onclick="toggleMobileNav()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--c-text-sec)">✕</button>
+  </div>
+  <div class="nav-step active" onclick="goStep(1);toggleMobileNav()"><div class="nav-num">1</div><span>基本信息</span></div>
+  <div class="nav-step" onclick="goStep(2);toggleMobileNav()"><div class="nav-num">2</div><span>收支数据</span></div>
+  <div class="nav-step" onclick="goStep(3);toggleMobileNav()"><div class="nav-num">3</div><span>资产负债</span></div>
+  <div class="nav-step" onclick="goStep(4);toggleMobileNav()"><div class="nav-num">4</div><span>保单规划</span></div>
+  <div class="nav-step" onclick="goStep(5);toggleMobileNav()"><div class="nav-num">5</div><span>人生规划</span></div>
+  <div class="nav-step" onclick="goStep(6);toggleMobileNav()"><div class="nav-num">6</div><span>分析报告</span></div>
+  <div class="nav-step" onclick="goStep(7);toggleMobileNav()"><div class="nav-num">7</div><span>投资理念</span></div>
+</div>
+
+</body>
+</html>
