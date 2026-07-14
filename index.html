@@ -456,7 +456,7 @@ body{
   
   /* 表单元素加大触控区域 */
   .form-input,.form-select{padding:10px 12px;font-size:16px}
-  .line-item{grid-template-columns:1fr 110px 28px;gap:6px}
+  .line-item{grid-template-columns:0.7fr 1.3fr 28px;gap:6px}
   .form-unit{padding:10px 8px}
   
   /* 汇总栏 */
@@ -485,7 +485,7 @@ body{
   .header-logo{width:32px;height:32px;font-size:16px}
   .risk-card{padding:12px}
   .goal-card{grid-template-columns:1fr 1fr}
-  .line-item{grid-template-columns:1fr 90px 28px}
+  .line-item{grid-template-columns:0.6fr 1.4fr 28px}
   .summary-bar{flex-direction:column;text-align:center}
 }
 
@@ -916,7 +916,7 @@ body{
       <!-- 理财型保险（与资产明细对应） -->
       <div class="card">
         <div class="card-header">
-          <span class="card-title"><span class="card-icon">💼</span>理财型保险（与资产明细对应）</span>
+          <span class="card-title"><span class="card-icon">💼</span>理财型保险<span style="font-size:11px;color:var(--c-text-sec);font-weight:400">（包含终身寿险、年金险等，与资产明细对应）</span></span>
         </div>
         <div class="card-body">
           <div id="wealthInsuranceDisplay"></div>
@@ -1823,8 +1823,9 @@ function addFamilyMember(){
   else defaultRel='子女';
   
   const isChild=defaultRel==='子女';
+  var newName=defaultRel==='本人'?'本人':'家人'+(relCount[defaultRel]?relCount[defaultRel]+1:1);
   familyMembers.push({
-    id:memberIdCounter,name:defaultRel==='本人'?'本人':defaultRel+(relCount[defaultRel]?relCount[defaultRel]+1:1),
+    id:memberIdCounter,name:newName,
     relationship:defaultRel,age:isChild?5:defaultRel==='父母'?65:35,
     monthlyIncome:isChild?0:defaultRel==='父母'?0:15000,
     isBreadwinner:!isChild&&defaultRel!=='父母',
@@ -1891,7 +1892,7 @@ function renderFamilyUI(){
       </div>
       <div class="form-grid" style="grid-template-columns:1fr 1fr">
         <div class="form-group">
-          <label class="form-label">已有寿险${!isWageEarner?'（无需）':''}</label>
+          <label class="form-label">已有定期寿险${!isWageEarner&&m.relationship!=='本人'?'（无需）':''}</label>
           <div class="form-suffix">
             <input class="form-input" type="number" min="0" value="${m.existingTermLife}" style="padding:6px 8px;font-size:12px" ${!isWageEarner?'disabled':''}
               oninput="let fm=familyMembers.find(x=>x.id==${m.id});fm.existingTermLife=parseFloat(this.value)||0;analyzeInsurance()">
