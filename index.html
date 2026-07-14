@@ -394,6 +394,9 @@ body{
   align-items:end;
   position:relative;
 }
+.goal-card .form-label{font-size:12px}
+.goal-card .form-input,.goal-card .form-select{font-size:13px;padding:7px 10px}
+.goal-card .form-unit{font-size:11px;padding:7px 8px}
 .goal-card.short{border-left:3px solid var(--c-info)}
 .goal-card.mid{border-left:3px solid var(--c-accent)}
 .goal-card.long{border-left:3px solid var(--c-primary)}
@@ -456,6 +459,7 @@ body{
   
   /* 表单元素加大触控区域 */
   .form-input,.form-select{padding:10px 12px;font-size:16px}
+  .goal-card .form-input,.goal-card .form-select{font-size:14px;padding:8px 10px}
   .line-item{grid-template-columns:0.7fr 1.3fr 28px;gap:6px}
   .form-unit{padding:10px 8px}
   
@@ -3005,6 +3009,7 @@ function calcYearsToFreedom(investAssets,monthlyExpense,monthlySurplus){
    ==================================================================== */
 function saveData(){
   var data={
+    _version:2,
     clientAge:document.getElementById('clientAge')?.value||'',
     clientName:document.getElementById('clientName')?.value||'',
     retireAge:document.getElementById('retireAge')?.value||'',
@@ -3042,6 +3047,9 @@ function loadData(){
     var raw=localStorage.getItem('financePlannerData');
     if(!raw) return false;
     var data=JSON.parse(raw);
+
+    // 数据版本检查：旧版本数据自动丢弃，使用新默认值
+    if(!data._version||data._version<2) return false;
 
     if(data.clientAge) document.getElementById('clientAge').value=data.clientAge;
     if(data.clientName) document.getElementById('clientName').value=data.clientName;
