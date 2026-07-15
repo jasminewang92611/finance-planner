@@ -317,6 +317,10 @@ body{
 .chart-wrap{position:relative;height:260px}
 .chart-wrap-lg{position:relative;height:340px}
 .chart-row{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.radar-layout{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(115px,.85fr);gap:12px;align-items:stretch}
+.radar-formulas{display:flex;flex-direction:column;justify-content:space-around;gap:8px;font-size:12px;line-height:1.55}
+.radar-formula{padding:10px;border-radius:8px}
+.radar-formula b{display:block;margin-bottom:3px}
 
 /* ==================== 指标卡 ==================== */
 .metric-row{
@@ -395,6 +399,7 @@ body{
   position:relative;
 }
 .goal-card .form-label{font-size:12px}
+.goal-card-hint{font-size:13px!important;color:var(--c-text-sec);margin-left:6px}
 .goal-card .form-input,.goal-card .form-select{font-size:13px;padding:7px 10px}
 .goal-card .form-unit{font-size:11px;padding:7px 8px}
 .goal-card.short{border-left:3px solid var(--c-info)}
@@ -461,6 +466,13 @@ body{
   .form-input,.form-select{padding:10px 12px;font-size:16px}
   .goal-card .form-input,.goal-card .form-select{font-size:14px;padding:8px 10px}
   .line-item{grid-template-columns:0.9fr 1.1fr 28px;gap:6px}
+  #assetList .line-item{grid-template-columns:minmax(0,1.35fr) minmax(88px,.65fr) 28px}
+  #assetList .form-suffix{gap:3px}
+  #assetList .form-unit{font-size:11px;padding-left:5px;padding-right:5px}
+  .radar-layout{grid-template-columns:minmax(0,1.3fr) minmax(108px,.9fr);gap:8px}
+  .radar-formulas{font-size:11px;gap:6px;line-height:1.45}
+  .radar-formula{padding:8px}
+  .goal-card-hint{font-size:12px!important}
   .form-unit{padding:10px 8px}
   
   /* 汇总栏 */
@@ -490,6 +502,7 @@ body{
   .risk-card{padding:12px}
   .goal-card{grid-template-columns:1fr 1fr}
   .line-item{grid-template-columns:0.85fr 1.15fr 28px}
+  #assetList .line-item{grid-template-columns:minmax(0,1.3fr) minmax(84px,.7fr) 28px}
   .summary-bar{flex-direction:column;text-align:center}
 }
 
@@ -946,7 +959,7 @@ body{
       <div class="card">
         <div class="card-header">
           <span class="card-title"><span class="card-icon">🎯</span>短中长期财务目标</span>
-          <span style="font-size:10px;color:var(--c-text-sec);margin-left:4px">（可删除/增加）</span>
+          <span class="goal-card-hint">（可删除/增加）</span>
           <button class="btn-add" onclick="addGoalItem()">+ 添加目标</button>
         </div>
         <div class="card-body">
@@ -1018,12 +1031,14 @@ body{
           <span class="card-title"><span class="card-icon">🎯</span>财务健康雷达</span>
         </div>
         <div class="card-body">
-          <div style="display:grid;grid-template-columns:repeat(3,minmax(180px,1fr));gap:10px;margin-bottom:16px;font-size:12px;line-height:1.65">
-            <div style="padding:10px 12px;background:#f0fff4;border-radius:8px"><b style="color:var(--c-success)">财务安全</b><br>达标储蓄率 + 完善保障 + 合理保费</div>
-            <div style="padding:10px 12px;background:#eff6ff;border-radius:8px"><b style="color:var(--c-primary)">偿债安全</b><br>充足流动性 + 低月供压力 + 高清偿率</div>
-            <div style="padding:10px 12px;background:#fffbeb;border-radius:8px"><b style="color:var(--c-accent)">财务自由</b><br>合理资产配置 + 持续被动收入</div>
+          <div class="radar-layout">
+            <div class="chart-wrap"><canvas id="radarChart"></canvas></div>
+            <div class="radar-formulas">
+              <div class="radar-formula" style="background:#f0fff4"><b style="color:var(--c-success)">财务安全</b>达标储蓄率 + 完善保障 + 合理保费</div>
+              <div class="radar-formula" style="background:#eff6ff"><b style="color:var(--c-primary)">偿债安全</b>充足流动性 + 低月供压力 + 高清偿率</div>
+              <div class="radar-formula" style="background:#fffbeb"><b style="color:var(--c-accent)">财务自由</b>合理资产配置 + 持续被动收入</div>
+            </div>
           </div>
-          <div class="chart-wrap"><canvas id="radarChart"></canvas></div>
           <div id="radarDetailTable" style="margin-top:16px"></div>
         </div>
       </div>
