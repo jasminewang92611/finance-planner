@@ -1702,7 +1702,7 @@ function addGoalItem(){
 // ---- 家庭成员数据 ----
 let familyMembers=[
   {id:1,name:'本人',relationship:'本人',age:35,monthlyIncome:25000,isBreadwinner:true,
-   existingTermLife:0,existingCriticalIll:0,existingMedical:'none',existingAccident:0}
+   existingTermLife:0,existingCriticalIll:0,existingMedical:'none',existingAccident:0,basicMedical:'unknown',medicalReserve:0}
 ];
 let memberIdCounter=1;
 
@@ -1710,6 +1710,27 @@ let memberIdCounter=1;
 function calcMemberInsurance(m,familyTotalLiab,familyExpense,annualRaisingExpense){
   const annualIncome=m.monthlyIncome*12;
   const workYears=Math.max(1,(parseInt(document.getElementById('retireAge').value)||60)-m.age);
+  const isSenior=m.relationship==='父母'||m.age>=55;
+
+  // 中老年人：优先评估医保、医疗备用金、意外险和经济责任，不默认将重疾险/商业医疗险判为缺口。
+  if(isSenior){
+    const hasBasicMedical=['employee','resident'].includes(m.basicMedical);
+    const medicalReserveTarget=hasBasicMedical?200000:500000;
+    const needLife=m.isBreadwinner&&m.monthlyIncome>0;
+    // 寿险只覆盖长辈实际承担的收入责任，最长按5年收入估算，不挪用全家负债口径。
+    const termLifeNeed=needLife?annualIncome*Math.min(Math.max(workYears,1),5):0;
+    const accidentSuggested=300000;
+    const existingTermLifeY=(m.existingTermLife||0)*10000;
+    const existingAccidentY=(m.existingAccident||0)*10000;
+    const gaps=[];
+    if(!hasBasicMedical) gaps.push({name:'基本医保',need:1,have:0,kind:'medical'});
+    if((m.medicalReserve||0)<medicalReserveTarget) gaps.push({name:'医疗备用金',need:medicalReserveTarget,have:m.medicalReserve||0,kind:'reserve'});
+    if(existingAccidentY<accidentSuggested) gaps.push({name:'意外险',need:accidentSuggested,have:existingAccidentY,kind:'insurance'});
+    if(needLife&&existingTermLifeY<termLifeNeed) gaps.push({name:'定期寿险',need:termLifeNeed,have:existingTermLifeY,kind:'insurance'});
+    return {member:m,isSenior:true,needLife,termLifeNeed,criticalIllSuggested:0,medicalAdvice:'记录既有重疾险/医疗险；新增商业保障须按年龄、健康告知和核保结果确认',medicalPremium:0,
+      accidentSuggested,termLifePremium:0,accidentPremium:0,criticalIllPremium:0,memberProtectionPremium:0,memberSavingsPremium:0,
+      hasBasicMedical,medicalReserveTarget,gaps};
+  }
 
   // 判断是否需要寿险：经济支柱 + 有收入
   const needLife=m.isBreadwinner&&m.monthlyIncome>0;
@@ -1738,7 +1759,8 @@ function calcMemberInsurance(m,familyTotalLiab,familyExpense,annualRaisingExpens
   const isMinorOrElder=m.age<=17||m.age>=60;
   const accidentMin=isMinorOrElder?200000:100000;
   const accidentMax=isMinorOrElder?500000:Infinity;
-  let accidentSuggested=m.monthlyIncome>0?Math.max(accidentMin,accidentNeed):(isMinorOrElder?300000:100000);
+  // 子女意外险采用20-50万元参考区间，默认从20万元起；成人/长辈沿用既有收入与上限逻辑。
+  let accidentSuggested=m.age<=17?200000:(m.monthlyIncome>0?Math.max(accidentMin,accidentNeed):(isMinorOrElder?300000:100000));
   accidentSuggested=Math.min(accidentSuggested,accidentMax);
 
   // 保费
@@ -1883,7 +1905,7 @@ function addFamilyMember(){
     relationship:defaultRel,age:isChild?5:defaultRel==='父母'?65:35,
     monthlyIncome:isChild?0:defaultRel==='父母'?0:15000,
     isBreadwinner:!isChild&&defaultRel!=='父母',
-    existingTermLife:0,existingCriticalIll:0,existingMedical:'none',existingAccident:0
+    existingTermLife:0,existingCriticalIll:0,existingMedical:'none',existingAccident:0,basicMedical:'unknown',medicalReserve:0
   });
   renderFamilyUI();
 }
@@ -1912,6 +1934,8 @@ function renderFamilyUI(){
   container.innerHTML=familyMembers.map(m=>{
     const isWageEarner=m.isBreadwinner&&m.monthlyIncome>0;
     const isSelf=m.relationship==='本人';
+    const isSenior=m.relationship==='父母'||m.age>=55;
+    const isChild=m.age<18;
     return `<div style="border:1.5px solid var(--c-border);border-radius:10px;padding:14px;margin-bottom:12px;background:#fff">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
         <div style="display:flex;align-items:center;gap:8px">
@@ -1939,14 +1963,26 @@ function renderFamilyUI(){
           <label class="form-label">月收入</label>
           <div class="form-suffix">
             <input class="form-input" type="number" min="0" value="${m.monthlyIncome}" style="padding:6px 8px;font-size:12px"
-              oninput="let fm=familyMembers.find(x=>x.id==${m.id});fm.monthlyIncome=parseFloat(this.value)||0;fm.isBreadwinner=fm.monthlyIncome>0&&(fm.relationship==='本人'||fm.relationship==='配偶');analyzeInsurance()">
+              oninput="let fm=familyMembers.find(x=>x.id==${m.id});fm.monthlyIncome=parseFloat(this.value)||0;if(!(${m.relationship==='父母'||m.age>=55}))fm.isBreadwinner=fm.monthlyIncome>0&&(fm.relationship==='本人'||fm.relationship==='配偶');analyzeInsurance()">
             <span class="form-unit" style="padding:6px 8px;font-size:12px">元/月</span>
           </div>
         </div>`}
       </div>
-      <div class="form-grid" style="grid-template-columns:1fr 1fr">
+      ${isSenior?`<div style="margin-top:10px;padding:10px;background:#fffbeb;border-radius:8px;font-size:12px;line-height:1.6">
+        <div style="font-weight:700;color:var(--c-primary);margin-bottom:8px">中老年人保障资料（医保、备用金、意外与经济责任优先）</div>
+        <div class="form-grid" style="grid-template-columns:1fr 1fr">
+          <div class="form-group"><label class="form-label">是否有医保</label><select class="form-select" style="padding:6px 8px;font-size:12px" onchange="let fm=familyMembers.find(x=>x.id==${m.id});fm.basicMedical=this.value;analyzeInsurance()"><option value="unknown" ${m.basicMedical==='unknown'?'selected':''}>待核对</option><option value="employee" ${m.basicMedical==='employee'?'selected':''}>职工医保（单位职工/退休人员）</option><option value="resident" ${m.basicMedical==='resident'?'selected':''}>居民医保（城乡居民按年缴费）</option><option value="none" ${m.basicMedical==='none'?'selected':''}>无医保/断缴</option></select></div>
+          <div class="form-group"><label class="form-label">医疗备用金</label><div class="form-suffix"><input class="form-input" type="number" min="0" value="${(m.medicalReserve||0)/10000}" style="padding:6px 8px;font-size:12px" oninput="let fm=familyMembers.find(x=>x.id==${m.id});fm.medicalReserve=(parseFloat(this.value)||0)*10000;analyzeInsurance()"><span class="form-unit" style="padding:6px 8px;font-size:12px"><b>万</b>元</span></div></div>
+          <div class="form-group"><label class="form-label">已有重疾险（仅记录）</label><div class="form-suffix"><input class="form-input" type="number" min="0" value="${m.existingCriticalIll}" style="padding:6px 8px;font-size:12px" oninput="let fm=familyMembers.find(x=>x.id==${m.id});fm.existingCriticalIll=parseFloat(this.value)||0;analyzeInsurance()"><span class="form-unit" style="padding:6px 8px;font-size:12px">万元</span></div></div>
+          <div class="form-group"><label class="form-label">已有医疗险（仅记录）</label><select class="form-select" style="padding:6px 8px;font-size:12px" onchange="let fm=familyMembers.find(x=>x.id==${m.id});fm.existingMedical=this.value;analyzeInsurance()"><option value="none" ${m.existingMedical==='none'?'selected':''}>无/不适用</option><option value="million" ${m.existingMedical==='million'?'selected':''}>百万医疗险</option><option value="mid" ${m.existingMedical==='mid'?'selected':''}>中端医疗险</option><option value="high" ${m.existingMedical==='high'?'selected':''}>高端医疗险</option></select></div>
+          <div class="form-group"><label class="form-label">已有意外险</label><div class="form-suffix"><input class="form-input" type="number" min="0" value="${m.existingAccident}" style="padding:6px 8px;font-size:12px" oninput="let fm=familyMembers.find(x=>x.id==${m.id});fm.existingAccident=parseFloat(this.value)||0;analyzeInsurance()"><span class="form-unit" style="padding:6px 8px;font-size:12px">万元</span></div></div>
+          <div class="form-group"><label class="form-label">是否承担家庭经济责任</label><label style="padding:7px 0"><input type="checkbox" ${m.isBreadwinner?'checked':''} onchange="let fm=familyMembers.find(x=>x.id==${m.id});fm.isBreadwinner=this.checked;analyzeInsurance()"> 有稳定收入并承担家庭支出</label></div>
+        </div>
+        ${m.isBreadwinner?`<div class="form-group" style="margin-top:8px"><label class="form-label">已有定期寿险</label><div class="form-suffix"><input class="form-input" type="number" min="0" value="${m.existingTermLife}" style="padding:6px 8px;font-size:12px" oninput="let fm=familyMembers.find(x=>x.id==${m.id});fm.existingTermLife=parseFloat(this.value)||0;analyzeInsurance()"><span class="form-unit" style="padding:6px 8px;font-size:12px">万元</span></div></div>`:''}
+      </div>`:''}
+      <div class="form-grid" style="display:${isSenior?'none':'grid'};grid-template-columns:1fr 1fr">
         <div class="form-group">
-          <label class="form-label">已有定期寿险${!isWageEarner&&m.relationship!=='本人'?'（无需）':''}</label>
+          <label class="form-label">已有定期寿险${isChild?'（18岁以下不能购买）':!isWageEarner&&m.relationship!=='本人'?'（无需）':''}</label>
           <div class="form-suffix">
             <input class="form-input" type="number" min="0" value="${m.existingTermLife}" style="padding:6px 8px;font-size:12px" ${!isWageEarner?'disabled':''}
               oninput="let fm=familyMembers.find(x=>x.id==${m.id});fm.existingTermLife=parseFloat(this.value)||0;analyzeInsurance()">
@@ -1962,7 +1998,7 @@ function renderFamilyUI(){
           </div>
         </div>
       </div>
-      <div class="form-grid" style="grid-template-columns:1fr 1fr">
+      <div class="form-grid" style="display:${isSenior?'none':'grid'};grid-template-columns:1fr 1fr">
         <div class="form-group">
           <label class="form-label">已有医疗险</label>
           <select class="form-select" style="padding:6px 8px;font-size:12px"
@@ -2067,6 +2103,17 @@ function generateReport(){
   const memberSafetyScores=[];
   familyMembers.forEach(m=>{
     let covered=0,total=0;
+    const isSenior=m.relationship==='父母'||m.age>=55;
+    if(isSenior){
+      const hasBasicMedical=['employee','resident'].includes(m.basicMedical);
+      const reserveTarget=hasBasicMedical?200000:500000;
+      total++; if(hasBasicMedical) covered++;
+      total++; if((m.medicalReserve||0)>=reserveTarget) covered++;
+      total++; if((m.existingAccident||0)*10000>=300000) covered++;
+      if(m.isBreadwinner&&m.monthlyIncome>0){total++; if((m.existingTermLife||0)>0) covered++;}
+      memberSafetyScores.push(covered/total*100);
+      return;
+    }
     // 定期寿险（仅经济支柱需要）
     if(m.isBreadwinner&&m.monthlyIncome>0){total++; if(m.existingTermLife>0) covered++;}
     // 重疾险
@@ -2488,6 +2535,26 @@ function renderInsuranceAdequacy(){
     const annualIncome=m.monthlyIncome*12;
     const isChild=m.age<=17||!m.isBreadwinner&&m.monthlyIncome===0&&m.relationship==='子女';
     const isElder=m.relationship==='父母';
+
+    if(r.isSenior){
+      const reserveHave=m.medicalReserve||0, reserveNeed=r.medicalReserveTarget;
+      const reserveOk=reserveHave>=reserveNeed;
+      const accidentHave=m.existingAccident*10000, accidentOk=accidentHave>=r.accidentSuggested;
+      const basicText=m.basicMedical==='employee'?'职工医保':m.basicMedical==='resident'?'居民医保':m.basicMedical==='none'?'无医保/断缴':'待核对';
+      const gapText=r.gaps.length===0?'<span style="color:var(--c-success);font-weight:600">✓ 长辈保障重点已覆盖</span>':r.gaps.map(g=>`<span style="color:var(--c-danger);font-size:12px">${g.name}${g.kind==='medical'?'待核对':'缺口¥'+fmt(g.need-g.have)}</span>`).join('　');
+      html+=`<div style="border:1px solid var(--c-border);border-radius:10px;margin-bottom:14px;overflow:hidden">
+        <div style="background:#fffbeb;color:var(--c-text);padding:10px 14px;display:flex;justify-content:space-between;align-items:center"><div style="font-weight:700;font-size:14px">👴 ${m.name}（中老年人，${m.age}岁）</div><div style="font-size:12px">${m.monthlyIncome>0?'年收入 ¥'+fmt(annualIncome):'无持续收入'}</div></div>
+        <table class="alloc-table" style="width:100%;font-size:13px"><thead><tr style="background:var(--c-bg)"><th style="padding:6px 12px">保障重点</th><th style="text-align:right;padding:6px 12px">建议/目标</th><th style="text-align:right;padding:6px 12px">当前资料</th><th style="text-align:center;padding:6px 12px">状态</th></tr></thead><tbody>
+          <tr><td style="padding:6px 12px">基本医保</td><td style="text-align:right;padding:6px 12px">核对连续参保</td><td style="text-align:right;padding:6px 12px">${basicText}</td><td style="text-align:center;padding:6px 12px;color:${r.hasBasicMedical?'var(--c-success)':'var(--c-danger)'};font-weight:600">${r.hasBasicMedical?'✓ 已确认':'⚠ 待核对'}</td></tr>
+          <tr><td style="padding:6px 12px">医疗备用金</td><td style="text-align:right;padding:6px 12px">¥${fmt(reserveNeed)}</td><td style="text-align:right;padding:6px 12px">¥${fmt(reserveHave)}</td><td style="text-align:center;padding:6px 12px;color:${reserveOk?'var(--c-success)':'var(--c-warning)'};font-weight:600">${reserveOk?'✓ 达标':'⚠ 需补足'}</td></tr>
+          <tr><td style="padding:6px 12px">重疾险/医疗险</td><td style="text-align:right;padding:6px 12px;color:var(--c-text-sec)">仅记录，按核保评估</td><td style="text-align:right;padding:6px 12px">重疾 ¥${fmt(m.existingCriticalIll*10000)}；${m.existingMedical==='none'?'医疗险未配置/不适用':'已有医疗险'}</td><td style="text-align:center;padding:6px 12px;color:var(--c-text-sec)">— 不默认判缺口</td></tr>
+          <tr><td style="padding:6px 12px">意外险</td><td style="text-align:right;padding:6px 12px">¥${fmt(r.accidentSuggested)}</td><td style="text-align:right;padding:6px 12px">¥${fmt(accidentHave)}</td><td style="text-align:center;padding:6px 12px;color:${accidentOk?'var(--c-success)':'var(--c-warning)'};font-weight:600">${accidentOk?'✓ 充足':'⚠ 可考虑'}</td></tr>
+          ${r.needLife?`<tr><td style="padding:6px 12px">定期寿险</td><td style="text-align:right;padding:6px 12px">¥${fmt(r.termLifeNeed)}</td><td style="text-align:right;padding:6px 12px">¥${fmt(m.existingTermLife*10000)}</td><td style="text-align:center;padding:6px 12px">${m.existingTermLife*10000>=r.termLifeNeed?'✓ 充足':'⚠ 按收入责任补足'}</td></tr>`:''}
+        </tbody></table>
+        <div style="padding:8px 14px;background:var(--c-bg);font-size:12px;line-height:1.6">${gapText}<br><span style="color:var(--c-text-sec)">说明：有医保时医疗备用金目标为20万元；无医保/医保待核对时目标为50万元。新增商业医疗险或重疾险须以健康告知、年龄与核保结果为准。</span></div>
+      </div>`;
+      return;
+    }
 
     // 重疾险分析
     const ciNeed=r.criticalIllSuggested;
@@ -3103,7 +3170,10 @@ function loadData(){
     if(data.passiveIncome) document.getElementById('passiveIncome').value=data.passiveIncome;
 
     if(data.risk) selectedRisk=data.risk;
-    if(data.familyMembers){ familyMembers=data.familyMembers; memberIdCounter=familyMembers.length+1; }
+    if(data.familyMembers){
+      familyMembers=data.familyMembers.map(m=>({...m,basicMedical:m.basicMedical||'unknown',medicalReserve:m.medicalReserve||0}));
+      memberIdCounter=familyMembers.length+1;
+    }
     if(data.goals) goals=data.goals;
 
     restoreLineItems('incomeList',data.incomeList);
