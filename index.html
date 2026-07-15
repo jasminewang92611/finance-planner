@@ -1059,12 +1059,12 @@ body{
       <!-- 资产配置明细表 -->
       <div class="card">
         <div class="card-header">
-          <span class="card-title"><span class="card-icon">📋</span>配置明细与预期收益</span>
+          <span class="card-title"><span class="card-icon">📋</span>全天候资产配置比例</span>
         </div>
         <div class="card-body">
           <table class="alloc-table" id="allocTable">
             <thead>
-              <tr><th>资产类别</th><th>推荐区间</th><th>当前比例</th><th>增减建议</th></tr>
+              <tr><th>资产类别</th><th>推荐区间</th><th>推荐比例</th><th>当前比例</th><th>增减建议</th></tr>
             </thead>
             <tbody id="allocTableBody"></tbody>
           </table>
@@ -1080,7 +1080,7 @@ body{
         <div class="card-body">
           <div class="chart-wrap-lg"><canvas id="roiChart"></canvas></div>
           <div id="strawHatNote" style="margin-top:10px;font-size:11px;color:var(--c-text-sec);padding:8px 12px;background:var(--c-bg);border-radius:6px">
-            💡 <b>草帽图说明：</b>金色区域为<b>积累期</b>（当前至退休），以当前投资资产__PRINCIPAL__+月结余__SURPLUS__定投，按3.5%年化复利增长。<b>红色虚线</b>为<b>消耗期</b>（退休后），每年按月度支出__EXPENSE__从资产中扣除生活费，剩余资产继续按3.5%增长。典型草帽形态：退休时资产峰值→逐年消耗递减→至90岁。图中标注每5年末的资产总额。
+            💡 <b>草帽图说明：</b>退休消耗期会剔除育儿/赡养及保障型保险支出，并按 3% 年通胀率计算退休后的生活开销。
           </div>
         </div>
       </div>
@@ -1306,48 +1306,31 @@ const Engine = {
 
   /* ---- 全天候资产配置模型 (All-Weather Portfolio) ----
      四类资产,推荐比例区间:
-       股票 30-40% · 大宗商品 15-20% · 现金/短债 15-20% · 长债 20-40%
-     调整1: 区间内取中位数为基准(平衡型)
-     调整2: 年龄修正 — 股票比例按(110-年龄)%映射到30-40%区间
-     调整3: 风险偏好偏移 */
+       股票/基金 30-40% · 大宗商品 10-20% · 现金/短债 10-20% · 长债/理财型保险 20-40%
+     推荐比例严格按客户选择的风险偏好生成。 */
   allWeatherAllocation(age,risk){
     // 区间定义 [min, max]
     const ranges={
       '股票(权益类)':{min:30,max:40,return:9,horizon:'长期(10年+)',color:'#3182ce'},
-      '大宗商品':{min:15,max:20,return:6,horizon:'中长期(5年+)',color:'#ed8936'},
-      '现金/短债':{min:15,max:20,return:2,horizon:'短期(1年内)',color:'#69c0ff'},
+      '大宗商品':{min:10,max:20,return:6,horizon:'中长期(5年+)',color:'#ed8936'},
+      '现金/短债':{min:10,max:20,return:2,horizon:'短期(1年内)',color:'#69c0ff'},
       '长债':{min:20,max:40,return:4,horizon:'中长期(3-10年)',color:'#63b3ed'}
     };
 
     // 离散5%递进配置表（所有比例均为5%整数倍，总和100%）
     const allocTable={
-      conservative:{'股票(权益类)':30,'大宗商品':15,'现金/短债':20,'长债':35},
-      balanced:    {'股票(权益类)':35,'大宗商品':15,'现金/短债':20,'长债':30},
-      aggressive:  {'股票(权益类)':40,'大宗商品':20,'现金/短债':15,'长债':25}
+      conservative:{'股票(权益类)':30,'大宗商品':10,'现金/短债':20,'长债':40},
+      balanced:    {'股票(权益类)':40,'大宗商品':10,'现金/短债':20,'长债':30},
+      aggressive:  {'股票(权益类)':40,'大宗商品':20,'现金/短债':10,'长债':30}
     };
     const baseAlloc=allocTable[risk]||allocTable.balanced;
-
-    // 年龄修正：35岁以下股票+0→+5%，55岁以上股票-0→-5%（5%递进）
-    let stockDelta=0;
-    if(age<35) stockDelta=5;
-    else if(age>55) stockDelta=-5;
-    // 40-50岁零修正，保持风险偏好选择不变
 
     let base={};
     Object.keys(baseAlloc).forEach(k=>{
       const r=ranges[k];
-      let pct=baseAlloc[k];
-      if(k==='股票(权益类)'){
-        pct=Math.max(25,Math.min(45,pct+stockDelta));
-        // 股票增减从长债对应调整
-      }
+      const pct=baseAlloc[k];
       base[k]={pct:pct,range:r.min+'-'+r.max+'%',return:r.return,horizon:r.horizon,color:r.color};
     });
-
-    // 如果年龄修正改变了股票比例，从长债调整以保持总和100%
-    if(stockDelta!==0){
-      base['长债'].pct-=stockDelta;
-    }
 
     return base;
   },
@@ -1492,6 +1475,7 @@ function addLineItem(listId){
     <button class="btn-remove" onclick="removeLineItem(this);${calcFn}">×</button>
   `;
   list.appendChild(item);
+  saveData();
 }
 
 function removeLineItem(btn){
@@ -1534,6 +1518,7 @@ function addLiabilityItem(){
     <button class="btn-remove" onclick="removeLineItem(this);calcLiabilities()">×</button>
   `;
   list.appendChild(item);
+  saveData();
 }
 
 /* ---- 计算收入 ---- */
@@ -1599,6 +1584,8 @@ function calcLiabilities(){
   const total=parseSum('#liabilityList');
   document.getElementById('totalLiabilities').textContent='¥'+fmt(total);
   calcNetWorth();
+  // 负债明细（含名称、余额与月还款额）每次修改后立即持久化，刷新页面也能恢复。
+  if(typeof saveData==='function') saveData();
   return total;
 }
 
@@ -2150,18 +2137,27 @@ function generateReport(){
   // 雷达图
   renderRadarChart(health.category,{sr,dti,liq,ir,sv,ff,ipr:insurancePremiumRatio,is:insuranceSafety});
 
-  // ROI预测
-  renderROIChart(investAssets,surplus,retireAge-age,age,retireAge,expense);
-  // 更新草帽图说明中的实际数字
-  (function(){
-    const note=document.getElementById('strawHatNote');
-    if(note){
-      note.innerHTML=note.innerHTML
-        .replace('__PRINCIPAL__','（'+fmt(investAssets)+'）')
-        .replace('__SURPLUS__','（'+fmt(surplus)+'/月）')
-        .replace('__EXPENSE__','（'+fmt(expense)+'/月）');
+  // ROI预测：退休后不再计入育儿/赡养及保险保费，并以3%通胀率推算老年生活开销。
+  let retirementExcluded=0;
+  const excludedNames=[];
+  document.querySelectorAll('#expenseList .line-item').forEach(item=>{
+    const name=item.querySelector('input:not([type=number])')?.value||'';
+    const val=parseFloat(item.querySelector('input[type=number]')?.value)||0;
+    if(/育儿|赡养|保险|保费/i.test(name)){
+      retirementExcluded+=val;
+      if(val>0) excludedNames.push(name);
     }
-  })();
+  });
+  const retirementMonthlyExpense=Math.max(0,expense-retirementExcluded);
+  const inflationRate=0.03;
+  const retirementStartMonthly=retirementMonthlyExpense*Math.pow(1+inflationRate,retireAge-age);
+  const retirementMonthlyPension=income*0.4;
+  const firstYearAssetWithdrawal=Math.max(0,retirementStartMonthly-retirementMonthlyPension);
+  renderROIChart(investAssets,surplus,retireAge-age,age,retireAge,retirementMonthlyExpense,inflationRate,retirementMonthlyPension);
+  const note=document.getElementById('strawHatNote');
+  if(note){
+    note.innerHTML=`💡 <b>草帽图说明：</b>金色区域为<b>积累期</b>（当前至退休），以当前投资资产（¥${fmt(investAssets)}）+月结余（¥${fmt(surplus)}/月）定投，按3.5%年化复利增长。<b>红色虚线</b>为<b>退休后资产提款期</b>：以当前退休基础月支出 <b>¥${fmt(retirementMonthlyExpense)}</b> 为起点（已剔除${excludedNames.length?excludedNames.join('、'):'育儿/赡养及保障型保险'}共 ¥${fmt(retirementExcluded)}/月），<b>按 3% 年通胀递增</b>，退休首年月支出预计为 <b>¥${fmt(retirementStartMonthly)}</b>。退休金按当前月收入的 <b>40%</b>，即 <b>¥${fmt(retirementMonthlyPension)}/月</b>抵减支出，首年预计从资产提款 <b>¥${fmt(firstYearAssetWithdrawal)}/月</b>；退休后生活费继续按 <b>3%</b> 年通胀递增。`;
+  }
 
   // 目标达成分析
   renderGoalAnalysis(investAssets,surplus);
@@ -2223,10 +2219,11 @@ function renderAllocTable(alloc,investAmount){
       adviceText='比例合理';adviceColor='var(--c-success)';adviceIcon='✓';
     }
 
-    const displayName = k === '大宗商品' ? '大宗商品(黄金等)' : k;
+    const displayName = k === '大宗商品' ? '大宗商品(黄金等)' : k === '长债' ? '长债（理财型保险等）' : k === '股票(权益类)' ? '股票/基金类' : k;
     return `<tr>
       <td><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${a.color};margin-right:6px"></span>${displayName}</td>
       <td style="font-weight:600;color:var(--c-primary)">${a.range}</td>
+      <td style="font-weight:700;color:var(--c-accent)">${a.pct}%</td>
       <td style="font-weight:700">${curTotal>0?curPct.toFixed(1)+'%':'—'}</td>
       <td style="color:${adviceColor};font-weight:600">${adviceIcon} ${adviceText}</td>
     </tr>`;
@@ -2236,7 +2233,7 @@ function renderAllocTable(alloc,investAmount){
   const note=document.getElementById('allocNote');
   if(note){
     note.innerHTML=`<div style="padding:10px 12px;background:var(--c-bg);border-radius:6px;font-size:12px;color:var(--c-text-sec);line-height:1.6">
-      💡 <b>当前比例</b>根据「资产明细」自动计算：股票/基金和投资性房产归入权益类；黄金归入大宗商品；活期存款/货币基金归入现金短债；理财型保险与其他债权类资产归入稳健类（长债）。自住房产不计入投资组合。<b>增减建议</b>将实际占比与推荐区间对比，仅供规划参考。
+      💡 <b>推荐比例</b>严格对应第 1 步选择的风险偏好：保守型为现金20% / 长债40% / 股票基金30% / 大宗商品10%；平衡型为现金20% / 长债30% / 股票基金40% / 大宗商品10%；进取型为现金10% / 长债30% / 股票基金40% / 大宗商品20%。<br><b>当前比例</b>根据资产明细自动计算：股票/基金和投资性房产归入权益类；黄金归入大宗商品；活期存款/货币基金归入现金短债；理财型保险与其他债权类资产归入稳健类（长债）。自住房产不计入投资组合。
     </div>`;
   }
 }
@@ -2834,14 +2831,15 @@ function renderRadarChart(category,metrics){
 }
 
 /* ---- 资产增长预测图（草帽图：3.5%年化·积累+退休消耗·5年标注） ---- */
-function renderROIChart(principal,monthlyContribution,workYears,currentAge,retireAge,monthlyExpense){
+function renderROIChart(principal,monthlyContribution,workYears,currentAge,retireAge,retirementMonthlyExpense,inflationRate=0.03,monthlyPension=0){
   const endAge=90;
   const totalYears=endAge-currentAge;
   const labels=[];
   const growth=[];      // 积累期（3.5%年化）
   const decumulation=[]; // 退休后消耗曲线
 
-  const annualExpense=(monthlyExpense||0)*12;
+  const annualExpense=(retirementMonthlyExpense||0)*12;
+  const annualPension=(monthlyPension||0)*12;
   const rate=0.035; // 统一3.5%年化
 
   // 计算退休时点资产峰值
@@ -2856,11 +2854,13 @@ function renderROIChart(principal,monthlyContribution,workYears,currentAge,retir
       growth.push(Math.round(val));
       decumulation.push(null);
     }else{
-      // 消耗期：退休后，从退休时点资产开始，每年扣除生活费，剩余按3.5%增长
+      // 消耗期：退休前已完成育儿/赡养与保障型保费，剩余生活费从当前值先滚动至退休，再逐年按通胀递增。
       const yearsAfterRetire=y-workYears;
       let val=retireAsset;
       for(let d=1;d<=yearsAfterRetire;d++){
-        val=val*(1+rate)-annualExpense;
+        const inflatedAnnualExpense=annualExpense*Math.pow(1+inflationRate,workYears+d-1);
+        const assetWithdrawal=Math.max(0,inflatedAnnualExpense-annualPension);
+        val=val*(1+rate)-assetWithdrawal;
         if(val<0) val=0;
       }
       growth.push(null);
@@ -2886,7 +2886,7 @@ function renderROIChart(principal,monthlyContribution,workYears,currentAge,retir
     type:'line',
     data:{labels,datasets:[
       {label:'资产积累（3.5%/年）',data:growth,borderColor:'#c9a84c',backgroundColor:'rgba(201,168,76,.12)',fill:true,borderWidth:2.5,pointRadius:0},
-      {label:'退休后消耗',data:decumulation,borderColor:'#e53e3e',backgroundColor:'rgba(229,62,62,.08)',fill:false,borderWidth:2,borderDash:[6,4],pointRadius:0}
+      {label:'退休后资产提款',data:decumulation,borderColor:'#e53e3e',backgroundColor:'rgba(229,62,62,.08)',fill:false,borderWidth:2,borderDash:[6,4],pointRadius:0}
     ]},
     options:{
       responsive:true,maintainAspectRatio:false,
@@ -2999,11 +2999,11 @@ function renderComprehensiveReview(health,metrics,fin){
 
   var dims=[
     {name:'\u50A8\u84C4\u7387',val:metrics.sr,score:health.detail['\u50A8\u84C4\u7387'],max:12,unit:'%',good:metrics.sr>=20},
-    {name:'\u4FDD\u8D39\u652F\u51FA\u6BD4\u4F8B',val:metrics.ipr,score:health.detail['\u4FDD\u8D39\u652F\u51FA\u6BD4\u4F8B'],max:12,unit:'%',good:metrics.ipr<=10&&metrics.ipr>0},
+    {name:'\u4FDD\u8D39\u652F\u51FA\u6BD4\u4F8B',val:metrics.ipr,score:health.detail['\u4FDD\u8D39\u652F\u51FA\u6BD4\u4F8B'],max:12,unit:'%',good:metrics.ipr>=5&&metrics.ipr<=10},
     {name:'\u4FDD\u9669\u5B89\u5168\u5EA6',val:metrics.is,score:health.detail['\u4FDD\u9669\u5B89\u5168\u5EA6'],max:12,unit:'%',good:metrics.is>=60},
     {name:'\u6D41\u52A8\u6027',val:metrics.liq,score:health.detail['\u6D41\u52A8\u6027'],max:12,unit:'\u4E2A\u6708',good:metrics.liq>=3&&metrics.liq<=12},
     {name:'\u6708\u5EA6\u507F\u503A\u7BA1\u7406',val:metrics.dti,score:health.detail['\u6708\u5EA6\u507F\u503A\u7BA1\u7406'],max:10,unit:'%',good:metrics.dti<36},
-    {name:'\u6E05\u507F\u7387',val:(metrics.sv*100),score:health.detail['\u6E05\u507F\u7387'],max:10,unit:'%',good:metrics.sv>=0.4&&metrics.sv<=0.9},
+    {name:'\u6E05\u507F\u7387',val:(metrics.sv*100),score:health.detail['\u6E05\u507F\u7387'],max:10,unit:'%',good:metrics.sv>=0.5},
     {name:'\u6295\u8D44\u8D44\u4EA7\u5360\u6BD4',val:metrics.ir,score:health.detail['\u6295\u8D44\u8D44\u4EA7\u5360\u6BD4'],max:16,unit:'%',good:metrics.ir>=30},
     {name:'\u8D22\u52A1\u81EA\u7531\u5EA6',val:metrics.ff,score:health.detail['\u8D22\u52A1\u81EA\u7531\u5EA6'],max:16,unit:'%',good:metrics.ff>=30}
   ];
@@ -3166,7 +3166,7 @@ function loadData(){
     if(data.clientAge) document.getElementById('clientAge').value=data.clientAge;
     if(data.clientName) document.getElementById('clientName').value=data.clientName;
     if(data.retireAge) document.getElementById('retireAge').value=data.retireAge;
-    if(data.monthlyDebtPayment) document.getElementById('monthlyDebtPayment').value=data.monthlyDebtPayment;
+    if(data.monthlyDebtPayment!==undefined) document.getElementById('monthlyDebtPayment').value=data.monthlyDebtPayment;
     if(data.passiveIncome) document.getElementById('passiveIncome').value=data.passiveIncome;
 
     if(data.risk) selectedRisk=data.risk;
