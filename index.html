@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>理财规划Agent · 智能财务分析与资产配置助手</title>
+<title>财务诊断与规划Agent · 智能财务分析与资产配置助手</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <style>
 /* ==================== 全局重置与变量 ==================== */
@@ -536,7 +536,7 @@ body{
   <div class="header-left">
     <div class="header-logo">¥</div>
     <div>
-      <div class="header-title">理财规划Agent</div>
+      <div class="header-title">财务诊断与规划Agent</div>
       <div class="header-sub">智能财务分析 · 全天候资产配置 · 人生规划</div>
     </div>
   </div>
@@ -632,7 +632,7 @@ body{
     <div class="step-content" id="step2">
       <div class="card">
         <div class="card-header">
-          <span class="card-title"><span class="card-icon">💰</span>月度收入</span>
+          <span class="card-title"><span class="card-icon">💰</span>家庭/个人月度收入</span>
           <button class="btn-add" onclick="addLineItem('incomeList')">+ 添加收入项</button>
         </div>
         <div class="card-body">
@@ -659,7 +659,7 @@ body{
 
       <div class="card">
         <div class="card-header">
-          <span class="card-title"><span class="card-icon">💳</span>月度支出</span>
+          <span class="card-title"><span class="card-icon">💳</span>家庭/个人月度支出</span>
           <button class="btn-add" onclick="addLineItem('expenseList')">+ 添加支出项</button>
         </div>
         <div class="card-body">
@@ -1018,6 +1018,11 @@ body{
           <span class="card-title"><span class="card-icon">🎯</span>财务健康雷达</span>
         </div>
         <div class="card-body">
+          <div style="display:grid;grid-template-columns:repeat(3,minmax(180px,1fr));gap:10px;margin-bottom:16px;font-size:12px;line-height:1.65">
+            <div style="padding:10px 12px;background:#f0fff4;border-radius:8px"><b style="color:var(--c-success)">财务安全</b><br>达标储蓄率 + 完善保障 + 合理保费</div>
+            <div style="padding:10px 12px;background:#eff6ff;border-radius:8px"><b style="color:var(--c-primary)">偿债安全</b><br>充足流动性 + 低月供压力 + 高清偿率</div>
+            <div style="padding:10px 12px;background:#fffbeb;border-radius:8px"><b style="color:var(--c-accent)">财务自由</b><br>合理资产配置 + 持续被动收入</div>
+          </div>
           <div class="chart-wrap"><canvas id="radarChart"></canvas></div>
           <div id="radarDetailTable" style="margin-top:16px"></div>
         </div>
@@ -1242,9 +1247,9 @@ const Engine = {
     const sr=d.savingsRate;
     const sScore = sr>=30?12 : sr>=20?9 : sr>=10?6 : sr>=0?3 : 0;
 
-    // 2. 保费支出比例 (0-12) — <10%最优
+    // 2. 保费支出比例 (0-12) — 5%-10%最合理；过低通常保障不足，过高挤占储蓄
     const ipr=d.insurancePremiumRatio||0;
-    const ipScore = ipr<=10?12 : ipr<=15?9 : ipr<=20?6 : ipr<=25?3 : 0;
+    const ipScore = ipr>=5&&ipr<=10?12 : ipr>0&&ipr<5?8 : ipr<=15?9 : ipr<=20?6 : ipr<=25?3 : 0;
 
     // 3. 保险安全度 (0-12) — 保单配置完善程度
     const is=d.insuranceSafety||0;
@@ -1259,9 +1264,9 @@ const Engine = {
     const dti=d.debtToIncome;
     const dScore = dti<36?10 : dti<50?8 : dti<70?5 : dti<100?3 : 0;
 
-    // 6. 清偿率 (0-10)
+    // 6. 清偿率 (0-10) — 净资产越高、负债越低越安全，100%为最优
     const sv=d.solvencyRatio||0;
-    const svScore = sv>=0.6&&sv<=0.7?10 : sv>0.7&&sv<=0.9?8 : sv>0.9?5 : sv>=0.4?4 : 1;
+    const svScore = sv>=0.9?10 : sv>=0.7?8 : sv>=0.5?6 : sv>=0.3?4 : sv>0?2 : 0;
 
     // === 财务自由指标 (32分) ===
     // 7. 投资资产占比 (0-16)
@@ -1272,8 +1277,12 @@ const Engine = {
     const ff=d.financialFreedom||0;
     const ffScore = ff>=100?16 : ff>=50?12 : ff>=30?9 : ff>=15?5 : ff>=5?3 : 0;
 
+    const financialSecurity=(sScore+iScore2+ipScore)/36*100;
+    const debtSafety=(lScore+dScore+svScore)/32*100;
+    const financialFreedom=(iScore+ffScore)/32*100;
     return {
       total:sScore+ipScore+iScore2+lScore+dScore+svScore+iScore+ffScore,
+      category:{财务安全:financialSecurity,偿债安全:debtSafety,财务自由:financialFreedom},
       detail:{储蓄率:sScore,保费支出比例:ipScore,保险安全度:iScore2,流动性:lScore,月度偿债管理:dScore,清偿率:svScore,投资资产占比:iScore,财务自由度:ffScore}
     };
   },
@@ -1386,6 +1395,29 @@ let currentStep=1;
 let selectedRisk='balanced';
 let charts={};
 
+// 七类资产：页面展示、持久化及报告计算均使用同一套分类编码
+const ASSET_META={
+  self:{label:'自住房产',example:'例：自住商品房',bucket:null},
+  realestate:{label:'投资性房产',example:'例：出租房/商铺',bucket:'equity'},
+  liquid:{label:'活期存款/货币基金',example:'例：银行卡活期、货币基金',bucket:'cash'},
+  equity:{label:'股票/基金/投资',example:'例：股票、权益基金',bucket:'equity'},
+  insurance:{label:'理财型保险',example:'例：年金险、增额终身寿',bucket:'bond'},
+  commodity:{label:'黄金/大宗商品',example:'例：黄金ETF、实物黄金',bucket:'commodity'},
+  other:{label:'其他资产',example:'例：公积金、债权类资产',bucket:'bond'}
+};
+
+function setupAssetCategories(){
+  document.querySelectorAll('.asset-cat').forEach(select=>{
+    Array.from(select.options).forEach(option=>{
+      const meta=Object.entries(ASSET_META).find(([,v])=>option.textContent.includes(v.label));
+      if(meta){
+        option.value=meta[0];
+        option.textContent=`${meta[1].label}（${meta[1].example}）`;
+      }
+    });
+  });
+}
+
 function toggleMobileNav(){
   var overlay=document.getElementById('mobileNavOverlay');
   var panel=document.getElementById('mobileNavPanel');
@@ -1455,13 +1487,13 @@ function addAssetItem(){
   item.className='line-item';
   item.innerHTML=`
     <select class="form-input asset-cat" onchange="calcAssets()" style="font-size:13px">
-      <option value="self">自住房产</option>
-      <option value="invest">投资性房产</option>
-      <option value="invest" selected>股票/基金/投资</option>
-      <option value="liquid">活期存款/货币基金</option>
-      <option value="invest">理财型保险</option>
-      <option value="invest">黄金/大宗商品</option>
-      <option value="other">其他(公积金/出借/等)</option>
+      <option value="self">自住房产（例：自住商品房）</option>
+      <option value="realestate">投资性房产（例：出租房/商铺）</option>
+      <option value="equity" selected>股票/基金/投资（例：股票、权益基金）</option>
+      <option value="liquid">活期存款/货币基金（例：银行卡活期、货币基金）</option>
+      <option value="insurance">理财型保险（例：年金险、增额终身寿）</option>
+      <option value="commodity">黄金/大宗商品（例：黄金ETF、实物黄金）</option>
+      <option value="other">其他资产（例：公积金、债权类资产）</option>
     </select>
     <div class="form-suffix">
       <input class="form-input asset-val" type="number" min="0" placeholder="金额" value="0" oninput="if(this.value<0)this.value=0;calcAssets()">
@@ -1755,14 +1787,15 @@ function analyzeInsurance(){
   const totalPremium=totalProtectionPremium+totalSavingsPremium;
   const premiumRatio=annualIncome>0?(totalPremium/annualIncome*100):0;
 
-  // 理财型保险（与资产明细一一对应，不区分险种类型，不做达标分析）
+  // 理财型保险：直接对应资产明细中选择的“理财型保险”项目，并可汇总多笔保单
   let wealthInsName='',wealthInsValue=0;
   document.querySelectorAll('#assetList .line-item').forEach(item=>{
-    const name=item.querySelector('input:not([type=number])')?.value||'';
+    const category=item.querySelector('.asset-cat')?.value||'';
+    const name=item.querySelector('.asset-cat')?.selectedOptions?.[0]?.textContent||'理财型保险';
     const val=parseFloat(item.querySelector('input[type=number]')?.value)||0;
-    if(/理财.*保险|保险.*理财/i.test(name)){
-      wealthInsName=name;
-      wealthInsValue=val;
+    if(category==='insurance'){
+      wealthInsName=name.replace(/（.*?）/,'');
+      wealthInsValue+=val;
     }
   });
 
@@ -1984,11 +2017,10 @@ function generateReport(){
     if(val<=0) return;
     if(cat==='self') selfProperty+=val;
     else if(cat==='liquid') liquidAssets+=val;
-    else if(cat==='invest') investAssets+=val;
+    else if(['realestate','equity','insurance','commodity','other'].includes(cat)) investAssets+=val;
     else wealthAssets+=val;
   });
-  // 如果没有识别到流动资产，将"其他"类资产中可变现部分计入流动资产
-  if(liquidAssets===0 && wealthAssets>0) liquidAssets=wealthAssets*0.3;
+  // 仅明确填写的活期/货币基金计入流动资产，不再对“其他资产”作任意估算
 
   // 识别保险支出（用于保障账户估算）
   let insuranceExpense=0;
@@ -2052,7 +2084,7 @@ function generateReport(){
   renderAllocTable(allocation,investAssets);
 
   // 雷达图
-  renderRadarChart(health.detail,{sr,dti,liq,ir,sv,ff,ipr:insurancePremiumRatio,is:insuranceSafety});
+  renderRadarChart(health.category,{sr,dti,liq,ir,sv,ff,ipr:insurancePremiumRatio,is:insuranceSafety});
 
   // ROI预测
   renderROIChart(investAssets,surplus,retireAge-age,age,retireAge,expense);
@@ -2084,16 +2116,18 @@ function generateReport(){
 function renderAllocTable(alloc,investAmount){
   const body=document.getElementById('allocTableBody');
 
-  // 从资产明细中计算当前四类资产占比（自住房产除外）
+  // 从资产明细中计算当前四类金融资产占比（自住房产不纳入投资组合）
   let curStock=0,curCommodity=0,curCash=0,curBond=0;
   document.querySelectorAll('#assetList .line-item').forEach(item=>{
     var sel=item.querySelector('.asset-cat');
     var cat=sel?sel.value:'';
     var val=parseFloat(item.querySelector('input[type=number]')?.value)||0;
-    if(cat==='self') return;
-    if(cat==='liquid') curCash+=val;
-    else if(cat==='invest') curStock+=val;
-    else curBond+=val;
+    const meta=ASSET_META[cat];
+    if(!meta||!meta.bucket) return;
+    if(meta.bucket==='cash') curCash+=val;
+    else if(meta.bucket==='equity') curStock+=val;
+    else if(meta.bucket==='commodity') curCommodity+=val;
+    else if(meta.bucket==='bond') curBond+=val;
   });
   const curTotal=curStock+curCommodity+curCash+curBond;
 
@@ -2138,7 +2172,7 @@ function renderAllocTable(alloc,investAmount){
   const note=document.getElementById('allocNote');
   if(note){
     note.innerHTML=`<div style="padding:10px 12px;background:var(--c-bg);border-radius:6px;font-size:12px;color:var(--c-text-sec);line-height:1.6">
-      💡 <b>当前比例</b>根据「资产明细」自动计算（自住房产不计入，投资性房产归入股票权益类）。<b>增减建议</b>将当前实际占比与推荐区间对比：低于区间下限建议增持，高于上限建议减持，区间内为合理。这是<b>全天候资产配置</b>的核心——四类资产同时持有，每季度/年度再平衡恢复目标比例，不预测市场、不择时。
+      💡 <b>当前比例</b>根据「资产明细」自动计算：股票/基金和投资性房产归入权益类；黄金归入大宗商品；活期存款/货币基金归入现金短债；理财型保险与其他债权类资产归入稳健类（长债）。自住房产不计入投资组合。<b>增减建议</b>将实际占比与推荐区间对比，仅供规划参考。
     </div>`;
   }
 }
@@ -2153,9 +2187,9 @@ function renderAllWeatherPhilosophy(alloc,investAmount){
   if(!investAmount){
     let inv=0;
     document.querySelectorAll('#assetList .line-item').forEach(item=>{
-      const name=item.querySelector('input:not([type=number])')?.value||'';
+      const cat=item.querySelector('.asset-cat')?.value||'';
       const val=parseFloat(item.querySelector('input[type=number]')?.value)||0;
-      if(!/自住/i.test(name)) inv+=val;
+      if(cat!=='self') inv+=val;
     });
     investAmount=inv||1000000;
   }
@@ -2637,24 +2671,15 @@ function renderCashFlow(){
 }
 
 /* ---- 雷达图（含含义与区间判断 · 三大分类） ---- */
-function renderRadarChart(detail,metrics){
-  // 使用实际指标数据，归一化到0-100（100=最优）
-  const labels=['储蓄率','保费支出比例','保险安全度','流动性','月度偿债管理','清偿率','投资资产占比','财务自由度'];
+function renderRadarChart(category,metrics){
+  // 展示三项可解释的综合能力，避免八个零散指标让客户误读雷达图
+  const labels=['财务安全','偿债安全','财务自由'];
 
   const s=metrics.sr||0, p=metrics.ipr||0, is=metrics.is||0;
   const l=metrics.liq||0, d=metrics.dti||0, sv=(metrics.sv||0)*100;
   const ir=metrics.ir||0, ff=metrics.ff||0;
 
-  const data=[
-    Math.max(0,Math.min(100, s/30*100)),                     // 储蓄率: 30%为满分（与评分标准一致）
-    p===0 && is===0 ? 30 : Math.max(0,(1-p/25)*100),        // 保费支出比例: 0%且无保险=30，否则线性(5%=80, 10%=60, 25%=0)
-    Math.max(0,Math.min(100, is)),                           // 保险安全度: 80%以上为优
-    l>=3&&l<=6 ? 100 : l<3 ? l/3*80 : Math.max(0,(12-l)/6*80), // 流动性: 3-6月最优
-    Math.max(0, (1 - d/100)*100),                             // 月度偿债管理: 越低越好，100%DTI为0分
-    sv>=60&&sv<=70 ? 100 : sv<60 ? sv/60*80 : Math.max(0,(100-sv)/30*80), // 清偿率: 60-70%最优
-    Math.max(0,Math.min(100, ir/50*100)),                    // 投资资产占比: 50%为满分
-    Math.max(0,Math.min(100, ff))                            // 财务自由度: 100%为满分
-  ];
+  const data=labels.map(label=>Math.max(0,Math.min(100,category[label]||0)));
 
   if(charts.radar) charts.radar.destroy();
   charts.radar=new Chart(document.getElementById('radarChart'),{
@@ -2678,13 +2703,13 @@ function renderRadarChart(detail,metrics){
   const dimGroups=[
     {cat:'财务安全指标',rows:[
       {key:'储蓄率',meaning:'月结余占月收入比例，反映储蓄能力',value:s.toFixed(1)+'%',range:'≥20%合理 / ≥30%优秀',isOk:s>=20},
-      {key:'保费支出比例',meaning:'年保费占年收入比例，建议＜10%',value:p.toFixed(1)+'%',range:'<10%合理 / <15%警戒',isOk:p<=10},
+      {key:'保费支出比例',meaning:'年保费占年收入比例，兼顾保障与储蓄',value:p.toFixed(1)+'%',range:'5%-10%最合理 / <5%需核查保障',isOk:p>=5&&p<=10},
       {key:'保险安全度',meaning:'保单配置完善程度（覆盖/需求）',value:is.toFixed(0)+'%',range:'≥80%完善 / ≥60%基本',isOk:is>=60}
     ]},
     {cat:'债务管理指标',rows:[
       {key:'流动性',meaning:'流动资产可覆盖月支出的月数',value:l.toFixed(1)+'个月',range:'3-12个月合理',isOk:l>=3&&l<=12},
       {key:'月度偿债管理',meaning:'月还款占月收入比例，反映偿债压力',value:d.toFixed(1)+'%',range:'<36%合理 / <50%警戒',isOk:d<36},
-      {key:'清偿率',meaning:'净资产占总资产比例，反映资产负债健康度',value:sv.toFixed(1)+'%',range:'60%-70%最优 / >40%合理',isOk:sv>=40&&sv<=90}
+      {key:'清偿率',meaning:'净资产占总资产比例，反映资产负债健康度',value:sv.toFixed(1)+'%',range:'≥90%优秀 / 越接近100%越安全',isOk:sv>=50}
     ]},
     {cat:'财务自由指标',rows:[
       {key:'投资资产占比',meaning:'投资资产占总资产比例，反映增值能力',value:ir.toFixed(1)+'%',range:'≥30%合理 / ≥50%优秀',isOk:ir>=30},
@@ -3009,7 +3034,7 @@ function calcYearsToFreedom(investAssets,monthlyExpense,monthlySurplus){
    ==================================================================== */
 function saveData(){
   var data={
-    _version:2,
+    _version:3,
     clientAge:document.getElementById('clientAge')?.value||'',
     clientName:document.getElementById('clientName')?.value||'',
     retireAge:document.getElementById('retireAge')?.value||'',
@@ -3033,9 +3058,11 @@ function getLineItemData(listId){
   if(!list) return items;
   list.querySelectorAll('.line-item').forEach(function(item){
     var catSelect=item.querySelector('.asset-cat');
+    var nameInput=item.querySelector('input:not([type=number])');
     var valInput=item.querySelector('input[type=number]');
     items.push({
-      name:catSelect?catSelect.value:'',
+      name:nameInput?nameInput.value:'',
+      category:catSelect?catSelect.value:'',
       value:valInput?valInput.value:''
     });
   });
@@ -3049,7 +3076,7 @@ function loadData(){
     var data=JSON.parse(raw);
 
     // 数据版本检查：旧版本数据自动丢弃，使用新默认值
-    if(!data._version||data._version<2) return false;
+    if(!data._version||data._version<3) return false;
 
     if(data.clientAge) document.getElementById('clientAge').value=data.clientAge;
     if(data.clientName) document.getElementById('clientName').value=data.clientName;
@@ -3090,19 +3117,15 @@ function restoreLineItems(listId,items){
   items.forEach(function(item,i){
     if(i<currentItems.length){
       var catSelect=currentItems[i].querySelector('.asset-cat');
+      var nameInput=currentItems[i].querySelector('input:not([type=number])');
       var valInput=currentItems[i].querySelector('input[type=number]');
       if(catSelect){
-        var catCode=item.name||'';
-        if(catCode==='self'||catCode==='liquid'||catCode==='invest'||catCode==='other'){
+        var catCode=item.category||'';
+        if(ASSET_META[catCode]){
           catSelect.value=catCode;
-        } else {
-          var name=catCode;
-          if(/自住/i.test(name)) catSelect.value='self';
-          else if(/活期|货币|存款|现金/i.test(name)) catSelect.value='liquid';
-          else if(/股票|基金|理财|债券|投资|贵金属|黄金|大宗商品|现货|房产/i.test(name)) catSelect.value='invest';
-          else catSelect.value='other';
         }
       }
+      if(nameInput) nameInput.value=item.name||'';
       if(valInput) valInput.value=item.value||'';
     }
   });
@@ -3111,6 +3134,8 @@ function restoreLineItems(listId,items){
 /* ====================================================================
    初始化
    ==================================================================== */
+// 先统一七类资产的分类编码与示例文案，再尝试恢复已保存的数据
+setupAssetCategories();
 // 尝试恢复已保存的数据
 var restored=loadData();
 if(!restored){
