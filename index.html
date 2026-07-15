@@ -318,6 +318,7 @@ body{
 .chart-wrap-lg{position:relative;height:340px}
 .chart-row{display:grid;grid-template-columns:1fr 1fr;gap:20px}
 .radar-layout{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(115px,.85fr);gap:12px;align-items:stretch}
+.radar-layout .chart-wrap{height:330px}
 .radar-formulas{display:flex;flex-direction:column;justify-content:space-around;gap:8px;font-size:12px;line-height:1.55}
 .radar-formula{padding:10px;border-radius:8px}
 .radar-formula b{display:block;margin-bottom:3px}
@@ -470,6 +471,7 @@ body{
   #assetList .form-suffix{gap:3px}
   #assetList .form-unit{font-size:11px;padding-left:5px;padding-right:5px}
   .radar-layout{grid-template-columns:minmax(0,1.3fr) minmax(108px,.9fr);gap:8px}
+  .radar-layout .chart-wrap{height:270px}
   .radar-formulas{font-size:11px;gap:6px;line-height:1.45}
   .radar-formula{padding:8px}
   .goal-card-hint{font-size:12px!important}
@@ -2708,8 +2710,9 @@ function renderRadarChart(category,metrics){
     }]},
     options:{
       responsive:true,maintainAspectRatio:false,
+      layout:{padding:{top:12,right:10,bottom:12,left:10}},
       scales:{r:{beginAtZero:true,max:100,ticks:{stepSize:25,font:{size:10}},
-        pointLabels:{font:{size:11}}}},
+        pointLabels:{font:{size:13,weight:'600'},padding:8,color:'#1a365d'}}},
       plugins:{legend:{display:false}}
     }
   });
