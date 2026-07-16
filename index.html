@@ -71,7 +71,7 @@ body{
 /* ---- 微信内置浏览器提示（仅检测到微信时显示） ---- */
 .wechat-browser-tip{
   display:none;
-  position:fixed;left:16px;right:16px;bottom:16px;z-index:1000;
+  position:fixed;left:16px;right:16px;top:78px;z-index:1000;
   max-width:560px;margin:0 auto;
   padding:13px 42px 13px 14px;
   background:rgba(26,54,93,.97);color:#fff;
@@ -682,7 +682,7 @@ body{
       <div class="card">
         <div class="card-header">
           <span class="card-title"><span class="card-icon">💰</span>家庭/个人月度收入</span>
-          <button class="btn-add" onclick="addLineItem('incomeList')">+ 添加收入项</button>
+          <div style="display:flex;gap:8px"><button class="btn btn-ghost" onclick="clearExampleData('cashflow')">清空示例数字</button><button class="btn-add" onclick="addLineItem('incomeList')">+ 添加收入项</button></div>
         </div>
         <div class="card-body">
           <div id="incomeList">
@@ -714,7 +714,7 @@ body{
         <div class="card-body">
           <div id="expenseList">
             <div class="line-item">
-              <input class="form-input" placeholder="支出项目名称" value="日常生活" oninput="calcExpense()">
+              <select class="form-input expense-cat" onchange="calcExpense()"><option value="daily" selected>日常生活（退休后持续）</option><option value="housing">房贷/房租（退休后持续）</option><option value="child_support">育儿/赡养（退休后不发生）</option><option value="leisure">娱乐进修（退休后持续）</option><option value="protection_insurance">保障型保险支出（退休后不发生）</option><option value="other_continue">其他支出（退休后持续）</option><option value="other_exclude">其他支出（退休后不发生）</option></select>
               <div class="form-suffix">
                 <input class="form-input" type="number" min="0" placeholder="金额" value="5000" oninput="if(this.value<0)this.value=0;calcExpense()">
                 <span class="form-unit">元/月</span>
@@ -722,7 +722,7 @@ body{
               <button class="btn-remove" onclick="removeLineItem(this);calcExpense()">×</button>
             </div>
             <div class="line-item">
-              <input class="form-input" placeholder="支出项目名称" value="房贷/房租" oninput="calcExpense()">
+              <select class="form-input expense-cat" onchange="calcExpense()"><option value="daily">日常生活（退休后持续）</option><option value="housing" selected>房贷/房租（退休后持续）</option><option value="child_support">育儿/赡养（退休后不发生）</option><option value="leisure">娱乐进修（退休后持续）</option><option value="protection_insurance">保障型保险支出（退休后不发生）</option><option value="other_continue">其他支出（退休后持续）</option><option value="other_exclude">其他支出（退休后不发生）</option></select>
               <div class="form-suffix">
                 <input class="form-input" type="number" min="0" placeholder="金额" value="8000" oninput="if(this.value<0)this.value=0;calcExpense()">
                 <span class="form-unit">元/月</span>
@@ -730,7 +730,7 @@ body{
               <button class="btn-remove" onclick="removeLineItem(this);calcExpense()">×</button>
             </div>
             <div class="line-item">
-              <input class="form-input" placeholder="支出项目名称" value="育儿/赡养" oninput="calcExpense()">
+              <select class="form-input expense-cat" onchange="calcExpense()"><option value="daily">日常生活（退休后持续）</option><option value="housing">房贷/房租（退休后持续）</option><option value="child_support" selected>育儿/赡养（退休后不发生）</option><option value="leisure">娱乐进修（退休后持续）</option><option value="protection_insurance">保障型保险支出（退休后不发生）</option><option value="other_continue">其他支出（退休后持续）</option><option value="other_exclude">其他支出（退休后不发生）</option></select>
               <div class="form-suffix">
                 <input class="form-input" type="number" min="0" placeholder="金额" value="3000" oninput="if(this.value<0)this.value=0;calcExpense()">
                 <span class="form-unit">元/月</span>
@@ -738,7 +738,7 @@ body{
               <button class="btn-remove" onclick="removeLineItem(this);calcExpense()">×</button>
             </div>
             <div class="line-item">
-              <input class="form-input" placeholder="支出项目名称" value="娱乐进修" oninput="calcExpense()">
+              <select class="form-input expense-cat" onchange="calcExpense()"><option value="daily">日常生活（退休后持续）</option><option value="housing">房贷/房租（退休后持续）</option><option value="child_support">育儿/赡养（退休后不发生）</option><option value="leisure" selected>娱乐进修（退休后持续）</option><option value="protection_insurance">保障型保险支出（退休后不发生）</option><option value="other_continue">其他支出（退休后持续）</option><option value="other_exclude">其他支出（退休后不发生）</option></select>
               <div class="form-suffix">
                 <input class="form-input" type="number" min="0" placeholder="金额" value="1500" oninput="if(this.value<0)this.value=0;calcExpense()">
                 <span class="form-unit">元/月</span>
@@ -746,7 +746,7 @@ body{
               <button class="btn-remove" onclick="removeLineItem(this);calcExpense()">×</button>
             </div>
             <div class="line-item">
-              <input class="form-input" placeholder="支出项目名称" value="保障型保险支出" oninput="calcExpense()">
+              <select class="form-input expense-cat" onchange="calcExpense()"><option value="daily">日常生活（退休后持续）</option><option value="housing">房贷/房租（退休后持续）</option><option value="child_support">育儿/赡养（退休后不发生）</option><option value="leisure">娱乐进修（退休后持续）</option><option value="protection_insurance" selected>保障型保险支出（退休后不发生）</option><option value="other_continue">其他支出（退休后持续）</option><option value="other_exclude">其他支出（退休后不发生）</option></select>
               <div class="form-suffix">
                 <input class="form-input" type="number" min="0" placeholder="金额" value="1200" oninput="if(this.value<0)this.value=0;calcExpense()">
                 <span class="form-unit">元/月</span>
@@ -775,7 +775,7 @@ body{
       <div class="card">
         <div class="card-header">
           <span class="card-title"><span class="card-icon">🏦</span>资产明细</span>
-          <button class="btn-add" onclick="addAssetItem()">+ 添加资产</button>
+          <div style="display:flex;gap:8px"><button class="btn btn-ghost" onclick="clearExampleData('assets')">清空示例数字</button><button class="btn-add" onclick="addAssetItem()">+ 添加资产</button></div>
         </div>
         <div class="card-body">
           <div id="assetList">
@@ -996,7 +996,7 @@ body{
         <div class="card-header">
           <span class="card-title"><span class="card-icon">🎯</span>短中长期财务目标</span>
           <span class="goal-card-hint">（可删除/增加）</span>
-          <button class="btn-add" onclick="addGoalItem()">+ 添加目标</button>
+          <div style="display:flex;gap:8px"><button class="btn btn-ghost" onclick="clearExampleData('goals')">清空示例数字</button><button class="btn-add" onclick="addGoalItem()">+ 添加目标</button></div>
         </div>
         <div class="card-body">
           <div style="font-size:12px;color:var(--c-text-sec);margin-bottom:12px">
@@ -1471,6 +1471,54 @@ const ASSET_META={
 };
 // 统一“可投资资产”口径：可用于再平衡、目标规划和退休测算；其他资产仅计入总资产/净资产。
 const INVESTABLE_ASSET_CATEGORIES=new Set(['realestate','liquid','equity','insurance','commodity']);
+const EXPENSE_META={
+  daily:{label:'日常生活',retirement:'continue'},
+  housing:{label:'房贷/房租',retirement:'continue'},
+  child_support:{label:'育儿/赡养',retirement:'exclude',raising:true},
+  leisure:{label:'娱乐进修',retirement:'continue'},
+  protection_insurance:{label:'保障型保险支出',retirement:'exclude',insurance:true},
+  other_continue:{label:'其他长期支出',retirement:'continue'},
+  other_exclude:{label:'其他阶段性支出',retirement:'exclude'}
+};
+
+function setupExpenseCategories(){
+  document.querySelectorAll('.expense-cat').forEach(function(select){
+    Array.from(select.options).forEach(function(option){
+      if(EXPENSE_META[option.value]) option.textContent=EXPENSE_META[option.value].label;
+    });
+  });
+}
+
+function expenseOptionsHTML(selected){
+  return Object.entries(EXPENSE_META).map(function(pair){
+    const code=pair[0],meta=pair[1];
+    return `<option value="${code}" ${code===selected?'selected':''}>${meta.label}</option>`;
+  }).join('');
+}
+function inferExpenseCategory(name){
+  const text=name||'';
+  if(/育儿|赡养|孩子|父母|老人/.test(text)) return 'child_support';
+  if(/保险|保费/.test(text)) return 'protection_insurance';
+  if(/房贷|房租/.test(text)) return 'housing';
+  if(/娱乐|进修/.test(text)) return 'leisure';
+  return 'daily';
+}
+function getExpenseMeta(item){
+  const select=item.querySelector('.expense-cat');
+  const name=item.querySelector('input:not([type=number])')?.value||'';
+  const code=select?.value||(EXPENSE_META[inferExpenseCategory(name)]?inferExpenseCategory(name):'daily');
+  return {code:code,meta:EXPENSE_META[code]||EXPENSE_META.daily,label:select?.selectedOptions?.[0]?.textContent||name||'未命名'};
+}
+function isInsuranceExpenseItem(item){
+  const expense=getExpenseMeta(item);
+  return expense.meta.insurance||isInsuranceExpenseName(expense.label);
+}
+function isRaisingExpenseItem(item){
+  return !!getExpenseMeta(item).meta.raising;
+}
+function isRetirementExcludedExpenseItem(item){
+  return getExpenseMeta(item).meta.retirement==='exclude';
+}
 
 function isInsuranceExpenseName(name){
   return /保险|保费/i.test(name||'');
@@ -1487,6 +1535,17 @@ function syncPrimaryMember(){
     }
   });
   return {age,income};
+}
+
+// 第1、2步一有改动，即时同步到保单页“本人”资料；仅重绘保单区域，不改动已填写的保单数据。
+function bindPrimaryMemberSync(){
+  const ageInput=document.getElementById('clientAge');
+  const incomeList=document.getElementById('incomeList');
+  const refresh=function(){ renderFamilyUI(); };
+  if(ageInput) ageInput.addEventListener('input',refresh);
+  if(incomeList) incomeList.addEventListener('input',function(e){
+    if(e.target.matches('input[type=number]')) refresh();
+  });
 }
 
 function setupAssetCategories(){
@@ -1543,6 +1602,27 @@ function showToast(msg){
   setTimeout(()=>t.classList.remove('show'),2500);
 }
 
+function clearExampleData(scope){
+  const messages={cashflow:'清空当前收支中的所有金额？',assets:'清空当前资产、负债及被动收入金额？',goals:'清空当前财务目标的金额与已有储备？'};
+  if(!window.confirm(messages[scope]||'确定清空示例数字？')) return;
+  if(scope==='cashflow'){
+    document.querySelectorAll('#incomeList input[type=number],#expenseList input[type=number]').forEach(function(input){input.value=0;});
+    calcIncome(); calcExpense(); renderFamilyUI();
+  }else if(scope==='assets'){
+    document.querySelectorAll('#assetList input[type=number],#liabilityList input[type=number]').forEach(function(input){input.value=0;});
+    const passive=document.getElementById('passiveIncome');
+    const debtPayment=document.getElementById('monthlyDebtPayment');
+    if(passive) passive.value=0;
+    if(debtPayment) debtPayment.value=0;
+    calcAssets(); calcLiabilities();
+  }else if(scope==='goals'){
+    goals.forEach(function(goal){goal.amount=0;goal.existing=0;});
+    renderGoals();
+  }
+  saveData();
+  showToast('示例数字已清空');
+}
+
 /* ---- 动态行管理 ---- */
 function addLineItem(listId){
   const list=document.getElementById(listId);
@@ -1550,8 +1630,11 @@ function addLineItem(listId){
   item.className='line-item';
   const isIncome=listId==='incomeList';
   const calcFn=isIncome?'calcIncome()':'calcExpense()';
+  const nameField=isIncome
+    ?'<input class="form-input" placeholder="项目名称" oninput="'+calcFn+'">'
+    :'<select class="form-input expense-cat" onchange="'+calcFn+'">'+expenseOptionsHTML('other_continue')+'</select>';
   item.innerHTML=`
-    <input class="form-input" placeholder="项目名称" oninput="${calcFn}">
+    ${nameField}
     <div class="form-suffix">
       <input class="form-input" type="number" min="0" placeholder="金额" value="0" oninput="if(this.value<0)this.value=0;${calcFn}">
       <span class="form-unit">元/月</span>
@@ -1875,8 +1958,7 @@ function analyzeInsurance(){
   // 解析育儿/赡养月支出（用于定期寿险保额计算）
   let raisingExpense=0;
   document.querySelectorAll('#expenseList .line-item').forEach(item=>{
-    const name=item.querySelector('input:not([type=number])')?.value||'';
-    if(/育儿|赡养/i.test(name)){
+    if(isRaisingExpenseItem(item)){
       raisingExpense+=parseFloat(item.querySelector('input[type=number]')?.value)||0;
     }
   });
@@ -2136,13 +2218,14 @@ function generateReport(){
 
   // 识别各类资产
   var assetItems=document.querySelectorAll('#assetList .line-item');
-  var liquidAssets=0,investAssets=0,selfProperty=0,wealthAssets=0;
+  var liquidAssets=0,investAssets=0,investRealEstateAssets=0,selfProperty=0,wealthAssets=0;
   assetItems.forEach(function(item){
     var cat=(item.querySelector('.asset-cat')||{}).value||'other';
     var val=parseFloat((item.querySelector('input[type=number]')||{}).value)||0;
     if(val<=0) return;
     if(cat==='self') selfProperty+=val;
     if(cat==='liquid') liquidAssets+=val;
+    if(cat==='realestate') investRealEstateAssets+=val;
     if(INVESTABLE_ASSET_CATEGORIES.has(cat)) investAssets+=val;
     else if(cat!=='self') wealthAssets+=val;
   });
@@ -2151,8 +2234,7 @@ function generateReport(){
   // 识别保险支出（用于保障账户估算）
   let insuranceExpense=0;
   document.querySelectorAll('#expenseList .line-item').forEach(item=>{
-    const name=item.querySelector('input:not([type=number])')?.value||'';
-    if(isInsuranceExpenseName(name)){
+    if(isInsuranceExpenseItem(item)){
       insuranceExpense+=parseFloat(item.querySelector('input[type=number]')?.value)||0;
     }
   });
@@ -2227,23 +2309,25 @@ function generateReport(){
   let retirementExcluded=0;
   const excludedNames=[];
   document.querySelectorAll('#expenseList .line-item').forEach(item=>{
-    const name=item.querySelector('input:not([type=number])')?.value||'';
+    const expense=getExpenseMeta(item);
     const val=parseFloat(item.querySelector('input[type=number]')?.value)||0;
-    if(/育儿|赡养/i.test(name)||isInsuranceExpenseName(name)){
+    if(isRetirementExcludedExpenseItem(item)){
       retirementExcluded+=val;
-      if(val>0) excludedNames.push(name);
+      if(val>0) excludedNames.push(expense.label.replace(/（.*?）/,''));
     }
   });
   const retirementMonthlyExpense=Math.max(0,expense-retirementExcluded);
   const inflationRate=0.03;
+  const realEstateDepreciationRate=0.02; // 草帽图固定情景：投资性房产仍按3.5%收益计算，同时计入2%年折减。
   const retirementStartMonthly=retirementMonthlyExpense*Math.pow(1+inflationRate,retireAge-age);
   const pensionReplacementRate=(parseFloat(document.getElementById('pensionReplacementRate')?.value)||0)/100;
   const retirementMonthlyPension=income*pensionReplacementRate;
   const firstYearAssetWithdrawal=Math.max(0,retirementStartMonthly-retirementMonthlyPension);
-  renderROIChart(investAssets,surplus,retireAge-age,age,retireAge,retirementMonthlyExpense,inflationRate,retirementMonthlyPension);
+  renderROIChart(investAssets,surplus,retireAge-age,age,retireAge,retirementMonthlyExpense,inflationRate,retirementMonthlyPension,investRealEstateAssets,realEstateDepreciationRate);
   const note=document.getElementById('strawHatNote');
   if(note){
-    note.innerHTML=`💡 <b>草帽图说明：</b>金色区域为<b>积累期</b>（当前至退休），以草帽图可投资资产（¥${fmt(investAssets)}）+月结余（¥${fmt(surplus)}/月）定投，按3.5%年化复利增长。可投资资产包括投资性房产、活期存款/货币基金（用于再平衡）、股票/基金、理财型保险及黄金/大宗商品；不含自住房、公积金及出借等取用时点不确定资产。<b>红色虚线</b>为<b>退休后资产提款期</b>：以当前退休基础月支出 <b>¥${fmt(retirementMonthlyExpense)}</b> 为起点（已剔除${excludedNames.length?excludedNames.join('、'):'育儿/赡养及保障型保险'}共 ¥${fmt(retirementExcluded)}/月），<b>按 3% 年通胀递增</b>，退休首年月支出预计为 <b>¥${fmt(retirementStartMonthly)}</b>。退休金按当前月收入的 <b>${Math.round(pensionReplacementRate*100)}%</b>，即 <b>¥${fmt(retirementMonthlyPension)}/月</b>抵减支出，首年预计从资产提款 <b>¥${fmt(firstYearAssetWithdrawal)}/月</b>；退休后生活费继续按 <b>3%</b> 年通胀递增。`;
+    const realEstateNote=investRealEstateAssets>0?`其中投资性房产 ¥${fmt(investRealEstateAssets)} 保留 <b>3.5%/年</b> 收益假设，同时计入 <b>${(realEstateDepreciationRate*100).toFixed(1)}%/年</b> 折减。`:'';
+    note.innerHTML=`💡 <b>草帽图说明：</b>金色区域为<b>积累期</b>（当前至退休），以草帽图可投资资产（¥${fmt(investAssets)}）+月结余（¥${fmt(surplus)}/月）定投，按3.5%年化复利增长。可投资资产包括投资性房产、活期存款/货币基金（用于再平衡）、股票/基金、理财型保险及黄金/大宗商品；不含自住房、公积金及出借等取用时点不确定资产。${realEstateNote}<b>红色虚线</b>为<b>退休后资产提款期</b>：以当前退休基础月支出 <b>¥${fmt(retirementMonthlyExpense)}</b> 为起点（已剔除${excludedNames.length?excludedNames.join('、'):'育儿/赡养及保障型保险'}共 ¥${fmt(retirementExcluded)}/月），<b>按 3% 年通胀递增</b>，退休首年月支出预计为 <b>¥${fmt(retirementStartMonthly)}</b>。退休金按当前月收入的 <b>${Math.round(pensionReplacementRate*100)}%</b>，即 <b>¥${fmt(retirementMonthlyPension)}/月</b>抵减支出，首年预计从资产提款 <b>¥${fmt(firstYearAssetWithdrawal)}/月</b>；退休后生活费继续按 <b>3%</b> 年通胀递增。`;
   }
 
   // 目标达成分析
@@ -2582,6 +2666,7 @@ function renderAllWeatherPhilosophy(alloc,investAmount){
         <div style="margin-bottom:6px"><b>第二步：</b>按建议比例一次性买入（或分2-3个月逐步建仓）</div>
         <div style="margin-bottom:6px"><b>第三步：</b>每季度末（或每年底）检查一次实际占比，卖出超配的、买入低配的</div>
         <div style="margin-bottom:6px"><b>第四步：</b>需要用钱时，按比例从各类资产中卖出即可</div>
+        <div style="margin-bottom:6px"><b>投资纪律：</b>投资资金应以闲置资金为限，<b>不使用消费贷、信用卡套现或高杠杆融资投资</b>；杠杆会同时放大收益、亏损及被迫卖出的风险。</div>
         <div style="margin-top:10px;padding:8px 12px;background:rgba(201,168,76,.25);border-radius:6px;font-size:12px">
           📌 <b>关键原则：</b>少操作、不择时、不预测、纪律化执行。这个策略简单到可以吃一辈子，也确实应该讲给你的孩子听。
         </div>
@@ -2602,8 +2687,7 @@ function renderInsuranceAdequacy(){
   // 解析育儿/赡养支出
   let raisingExpense=0;
   document.querySelectorAll('#expenseList .line-item').forEach(item=>{
-    const name=item.querySelector('input:not([type=number])')?.value||'';
-    if(/育儿|赡养/i.test(name)){
+    if(isRaisingExpenseItem(item)){
       raisingExpense+=parseFloat(item.querySelector('input[type=number]')?.value)||0;
     }
   });
@@ -2810,7 +2894,7 @@ function renderCashFlow(){
     if(val>0){incomes.push({name,val});totalIncome+=val;}
   });
   document.querySelectorAll('#expenseList .line-item').forEach(item=>{
-    const name=item.querySelector('input:not([type=number])')?.value||'未命名';
+    const name=getExpenseMeta(item).label;
     const val=parseFloat(item.querySelector('input[type=number]')?.value)||0;
     if(val>0){expenses.push({name,val});totalExpense+=val;}
   });
@@ -2923,7 +3007,7 @@ function renderRadarChart(category,metrics){
 }
 
 /* ---- 资产增长预测图（草帽图：3.5%年化·积累+退休消耗·5年标注） ---- */
-function renderROIChart(principal,monthlyContribution,workYears,currentAge,retireAge,retirementMonthlyExpense,inflationRate=0.03,monthlyPension=0){
+function renderROIChart(principal,monthlyContribution,workYears,currentAge,retireAge,retirementMonthlyExpense,inflationRate=0.03,monthlyPension=0,realEstateAssets=0,realEstateDepreciationRate=0){
   const endAge=90;
   const totalYears=endAge-currentAge;
   const labels=[];
@@ -2933,28 +3017,46 @@ function renderROIChart(principal,monthlyContribution,workYears,currentAge,retir
   const annualExpense=(retirementMonthlyExpense||0)*12;
   const annualPension=(monthlyPension||0)*12;
   const rate=0.035; // 统一3.5%年化
+  const propertyPrincipal=Math.max(0,Math.min(realEstateAssets||0,principal||0));
+  const financialPrincipal=Math.max(0,(principal||0)-propertyPrincipal);
+  const propertyDecay=Math.max(0,Math.min(1,realEstateDepreciationRate||0));
+  const financialValueAt=function(years){
+    return Engine.futureValue(financialPrincipal,monthlyContribution,rate,years);
+  };
+  const propertyValueAt=function(years){
+    return propertyPrincipal*Math.pow((1+rate)*(1-propertyDecay),years);
+  };
 
-  // 计算退休时点资产峰值
-  const retireAsset=Engine.futureValue(principal,monthlyContribution,rate,workYears);
+  // 投资性房产保留3.5%年化收益，同时按折减率计算；其余可投资资产与新增结余按3.5%年化增长。
+  const retireFinancialAsset=financialValueAt(workYears);
+  const retirePropertyAsset=propertyValueAt(workYears);
 
   for(let y=0;y<=totalYears;y++){
     const ageNow=currentAge+y;
     labels.push(ageNow+'岁');
     if(y<=workYears){
-      // 积累期：定投+复利（3.5%）
-      const val=Engine.futureValue(principal,monthlyContribution,rate,y);
+      // 积累期：金融资产定投复利；投资性房产按3.5%收益并计入折减。
+      const val=financialValueAt(y)+propertyValueAt(y);
       growth.push(Math.round(val));
       decumulation.push(null);
     }else{
       // 消耗期：退休前已完成育儿/赡养与保障型保费，剩余生活费从当前值先滚动至退休，再逐年按通胀递增。
       const yearsAfterRetire=y-workYears;
-      let val=retireAsset;
+      let financialValue=retireFinancialAsset;
+      let propertyValue=retirePropertyAsset;
       for(let d=1;d<=yearsAfterRetire;d++){
         const inflatedAnnualExpense=annualExpense*Math.pow(1+inflationRate,workYears+d-1);
         const assetWithdrawal=Math.max(0,inflatedAnnualExpense-annualPension);
-        val=val*(1+rate)-assetWithdrawal;
-        if(val<0) val=0;
+        financialValue*=1+rate;
+        propertyValue*=(1+rate)*(1-propertyDecay);
+        if(assetWithdrawal<=financialValue){
+          financialValue-=assetWithdrawal;
+        }else{
+          propertyValue=Math.max(0,propertyValue-(assetWithdrawal-financialValue));
+          financialValue=0;
+        }
       }
+      const val=Math.max(0,financialValue+propertyValue);
       growth.push(null);
       decumulation.push(Math.round(val));
     }
@@ -3236,11 +3338,12 @@ function getLineItemData(listId){
   if(!list) return items;
   list.querySelectorAll('.line-item').forEach(function(item){
     var catSelect=item.querySelector('.asset-cat');
+    var expenseSelect=item.querySelector('.expense-cat');
     var nameInput=item.querySelector('input:not([type=number])');
     var valInput=item.querySelector('input[type=number]');
     items.push({
-      name:nameInput?nameInput.value:'',
-      category:catSelect?catSelect.value:'',
+      name:nameInput?nameInput.value:(expenseSelect?.selectedOptions?.[0]?.textContent||''),
+      category:catSelect?catSelect.value:(expenseSelect?expenseSelect.value:''),
       value:valInput?valInput.value:''
     });
   });
@@ -3299,6 +3402,7 @@ function restoreLineItems(listId,items){
   items.forEach(function(item,i){
     if(i<currentItems.length){
       var catSelect=currentItems[i].querySelector('.asset-cat');
+      var expenseSelect=currentItems[i].querySelector('.expense-cat');
       var nameInput=currentItems[i].querySelector('input:not([type=number])');
       var valInput=currentItems[i].querySelector('input[type=number]');
       if(catSelect){
@@ -3306,6 +3410,10 @@ function restoreLineItems(listId,items){
         if(ASSET_META[catCode]){
           catSelect.value=catCode;
         }
+      }
+      if(expenseSelect){
+        var expenseCode=EXPENSE_META[item.category]?item.category:inferExpenseCategory(item.name);
+        expenseSelect.value=expenseCode;
       }
       if(nameInput) nameInput.value=item.name||'';
       if(valInput) valInput.value=item.value||'';
@@ -3318,7 +3426,9 @@ function restoreLineItems(listId,items){
    ==================================================================== */
 // 先统一七类资产的分类编码与示例文案，再尝试恢复已保存的数据
 setupAssetCategories();
+setupExpenseCategories();
 initWeChatBrowserTip();
+bindPrimaryMemberSync();
 // 尝试恢复已保存的数据
 var restored=loadData();
 if(!restored){
