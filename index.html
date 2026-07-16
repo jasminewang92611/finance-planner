@@ -2056,7 +2056,11 @@ function addFamilyMember(){
   else defaultRel='子女';
   
   const isChild=defaultRel==='子女';
-  var newName=defaultRel==='本人'?'本人':'家人'+(relCount[defaultRel]?relCount[defaultRel]+1:1);
+  const nextFamilyNumber=familyMembers.reduce((maxNumber,member)=>{
+    const match=/^家人(\d+)$/.exec(member.name||'');
+    return match?Math.max(maxNumber,parseInt(match[1],10)):maxNumber;
+  },0)+1;
+  var newName=defaultRel==='本人'?'本人':'家人'+nextFamilyNumber;
   familyMembers.push({
     id:memberIdCounter,name:newName,
     relationship:defaultRel,age:isChild?5:defaultRel==='父母'?65:35,
