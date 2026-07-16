@@ -959,7 +959,15 @@ body{
       <div class="card">
         <div class="card-header">
           <span class="card-title"><span class="card-icon">👨‍👩‍👧‍👦</span>家庭成员保单规划</span>
-          <button class="btn-add" onclick="addFamilyMember()">+ 添加家庭成员</button>
+          <button class="btn-add" id="addFamilyMemberBtn" onclick="toggleMemberRelationshipPicker()">+ 添加家庭成员</button>
+        </div>
+        <div id="memberRelationshipPicker" style="display:none;margin:0 18px 14px;padding:14px;border:1.5px solid var(--c-border);border-radius:10px;background:var(--c-bg)">
+          <div style="font-size:13px;font-weight:700;margin-bottom:10px">请选择家庭成员关系</div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">
+            <button type="button" class="btn btn-ghost" onclick="addFamilyMember('配偶')">💑 配偶</button>
+            <button type="button" class="btn btn-ghost" onclick="addFamilyMember('子女')">👶 子女</button>
+            <button type="button" class="btn btn-ghost" onclick="addFamilyMember('父母')">👴 父母</button>
+          </div>
         </div>
         <div class="card-body" id="familyMembersList">
           <!-- 动态生成 -->
@@ -2044,30 +2052,30 @@ function analyzeInsurance(){
 }
 
 // ---- 成员管理 ----
-function addFamilyMember(){
+function toggleMemberRelationshipPicker(){
+  const picker=document.getElementById('memberRelationshipPicker');
+  if(!picker) return;
+  picker.style.display=picker.style.display==='none'?'block':'none';
+}
+
+function addFamilyMember(relationship){
+  if(!['配偶','子女','父母'].includes(relationship)) return;
   memberIdCounter++;
-  const relMap={'本人':1,'配偶':2,'子女':3,'父母':4};
-  const relCount={};
-  familyMembers.forEach(m=>{relCount[m.relationship]=(relCount[m.relationship]||0)+1;});
-  
-  let defaultRel='配偶';
-  if(!relCount['本人']) defaultRel='本人';
-  else if(!relCount['配偶']) defaultRel='配偶';
-  else defaultRel='子女';
-  
-  const isChild=defaultRel==='子女';
+  const isChild=relationship==='子女';
   const nextFamilyNumber=familyMembers.reduce((maxNumber,member)=>{
     const match=/^家人(\d+)$/.exec(member.name||'');
     return match?Math.max(maxNumber,parseInt(match[1],10)):maxNumber;
   },0)+1;
-  var newName=defaultRel==='本人'?'本人':'家人'+nextFamilyNumber;
+  var newName='家人'+nextFamilyNumber;
   familyMembers.push({
     id:memberIdCounter,name:newName,
-    relationship:defaultRel,age:isChild?5:defaultRel==='父母'?65:35,
-    monthlyIncome:isChild?0:defaultRel==='父母'?0:15000,
-    isBreadwinner:!isChild&&defaultRel!=='父母',
+    relationship:relationship,age:isChild?5:relationship==='父母'?65:35,
+    monthlyIncome:isChild?0:relationship==='父母'?0:15000,
+    isBreadwinner:relationship==='配偶',
     existingTermLife:0,existingCriticalIll:0,existingMedical:'none',existingAccident:0,basicMedical:'unknown',medicalReserve:0
   });
+  const picker=document.getElementById('memberRelationshipPicker');
+  if(picker) picker.style.display='none';
   renderFamilyUI();
   queueAutoSave();
 }
@@ -2092,7 +2100,7 @@ function renderFamilyUI(){
     const isWageEarner=m.isBreadwinner&&m.monthlyIncome>0;
     const isSelf=m.relationship==='本人';
     const isSenior=m.relationship==='父母'||m.age>=55;
-    const isChild=m.age<18;
+    const isChild=m.relationship==='子女'&&m.age<18;
     return `<div style="border:1.5px solid var(--c-border);border-radius:10px;padding:14px;margin-bottom:12px;background:#fff">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
         <div style="display:flex;align-items:center;gap:8px">
@@ -2135,7 +2143,11 @@ function renderFamilyUI(){
           <div class="form-group"><label class="form-label">已有意外险</label><div class="form-suffix"><input class="form-input" type="number" min="0" value="${m.existingAccident}" style="padding:6px 8px;font-size:12px" oninput="let fm=familyMembers.find(x=>x.id==${m.id});fm.existingAccident=parseFloat(this.value)||0;analyzeInsurance()"><span class="form-unit" style="padding:6px 8px;font-size:12px">万元</span></div></div>
           <div class="form-group"><label class="form-label">是否承担家庭经济责任</label><label style="padding:7px 0"><input type="checkbox" ${m.isBreadwinner?'checked':''} onchange="let fm=familyMembers.find(x=>x.id==${m.id});fm.isBreadwinner=this.checked;analyzeInsurance()"> 有稳定收入并承担家庭支出</label></div>
         </div>
-        ${m.isBreadwinner?`<div class="form-group" style="margin-top:8px"><label class="form-label">已有定期寿险</label><div class="form-suffix"><input class="form-input" type="number" min="0" value="${m.existingTermLife}" style="padding:6px 8px;font-size:12px" oninput="let fm=familyMembers.find(x=>x.id==${m.id});fm.existingTermLife=parseFloat(this.value)||0;analyzeInsurance()"><span class="form-unit" style="padding:6px 8px;font-size:12px">万元</span></div></div>`:''}
+        <div class="form-group" style="margin-top:8px"><label class="form-label">已有定期寿险</label><div class="form-suffix"><input class="form-input" type="number" min="0" value="${m.existingTermLife}" style="padding:6px 8px;font-size:12px" oninput="let fm=familyMembers.find(x=>x.id==${m.id});fm.existingTermLife=parseFloat(this.value)||0;analyzeInsurance()"><span class="form-unit" style="padding:6px 8px;font-size:12px">万元</span></div></div>
+      </div>`:''}
+      ${m.relationship==='子女'&&!isSenior?`<div style="margin-top:10px;padding:10px 12px;background:#f0f7ff;border-radius:8px;font-size:12px">
+        <div style="font-weight:700;color:var(--c-primary)">子女保单资料</div>
+        ${isChild?`<div style="margin-top:6px;color:#b45309;font-weight:600">⚠ 定期寿险18岁以下不能购买</div>`:''}
       </div>`:''}
       <div class="form-grid" style="display:${isSenior?'none':'grid'};grid-template-columns:1fr 1fr">
         <div class="form-group">
