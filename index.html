@@ -1256,7 +1256,7 @@ body{
         <div class="card-body">
           <table class="alloc-table" id="goalTable">
             <thead>
-              <tr><th>目标</th><th>优先级</th><th>期限</th><th>目标金额</th><th>所需月投</th><th>现值需求</th><th>达成概率</th><th>状态</th></tr>
+              <tr><th>目标</th><th>优先级</th><th>期限</th><th>目标金额</th><th>所需月投</th><th>状态</th></tr>
             </thead>
             <tbody id="goalTableBody"></tbody>
           </table>
@@ -1346,9 +1346,8 @@ const Engine = {
 
   /* ---- 负债收入比 ----
      公式: 负债收入比 = 月还款额 / 月收入 × 100%
-     标准: <36%安全, 36-50%警戒, >50%危险 */
+     标准: ≤36%安全, 36%-50%警戒, >50%危险（参照国际通行的28/36房贷审批规则） */
   debtToIncome(debtPay,income){
-    if(debtPay>0&&(!income||income<=0)) return 100;
     if(!income||income<=0) return 0;
     return (debtPay/income)*100;
   },
@@ -1365,7 +1364,6 @@ const Engine = {
      公式: 资产负债率 = 总负债 / 总资产 × 100%
      标准: <50%健康, 50-70%警戒, >70%危险 */
   assetLiabilityRatio(totalLiab,totalAssets){
-    if(totalLiab>0&&(!totalAssets||totalAssets<=0)) return 100;
     if(!totalAssets||totalAssets<=0) return 0;
     return (totalLiab/totalAssets)*100;
   },
@@ -1433,11 +1431,11 @@ const Engine = {
     // === 财务安全指标 (36分) ===
     // 1. 储蓄率 (0-12)
     const sr=d.savingsRate;
-    const sScore = sr>=30?12 : sr>=20?9 : sr>=10?6 : sr>=0?3 : 0;
+    const sScore = sr>=30?12 : sr>=20?9 : sr>=10?6 : sr>=5?5 : sr>=0?3 : 0;
 
     // 2. 保费支出比例 (0-12) — 5%-10%最合理；过低通常保障不足，过高挤占储蓄
     const ipr=d.insurancePremiumRatio||0;
-    const ipScore = ipr<=0?0 : ipr>=5&&ipr<=10?12 : ipr>0&&ipr<5?8 : ipr<=15?9 : ipr<=20?6 : ipr<=25?3 : 0;
+    const ipScore = ipr>=5&&ipr<=10?12 : ipr>0&&ipr<5?8 : ipr<=15?9 : ipr<=20?6 : ipr<=25?3 : 0;
 
     // 3. 保险安全度 (0-12) — 保单配置完善程度
     const is=d.insuranceSafety||0;
@@ -1450,7 +1448,7 @@ const Engine = {
 
     // 5. 月度偿债管理 (0-10)
     const dti=d.debtToIncome;
-    const dScore = dti<36?10 : dti<50?8 : dti<70?5 : dti<100?3 : 0;
+    const dScore = dti<=36?10 : dti<50?8 : dti<70?5 : dti<100?3 : 0;
 
     // 6. 清偿率 (0-10) — 净资产越高、负债越低越安全，100%为最优
     const sv=d.solvencyRatio||0;
@@ -1558,11 +1556,6 @@ const Engine = {
     return Math.max(0,lifeValue-netWorth);
   }
 };
-
-function escapeHTML(str){
-  if(!str) return '';
-  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
-}
 
 /* ====================================================================
    UI 状态与导航
@@ -1710,24 +1703,7 @@ function syncPrimaryMember(){
   return {age,income};
 }
 
-function changeMemberRelationship(memberId,newRelationship){
-  var member=familyMembers.find(function(x){return x.id===memberId;});
-  if(!member) return;
-  if(newRelationship==='本人'&&member.relationship!=='本人'){
-    familyMembers.forEach(function(m){
-      if(m.id!==memberId&&m.relationship==='本人') m.relationship='配偶';
-    });
-    var age=parseInt(document.getElementById('clientAge')?.value)||35;
-    var income=parseSum('#incomeList');
-    member.age=age;
-    member.monthlyIncome=income;
-    member.isBreadwinner=income>0;
-  }
-  member.relationship=newRelationship;
-  renderFamilyUI();
-}
-
-// 第1、2步一有改动，即时同步到保单页"本人"资料；仅重绘保单区域，不改动已填写的保单数据。
+// 第1、2步一有改动，即时同步到保单页“本人”资料；仅重绘保单区域，不改动已填写的保单数据。
 function bindPrimaryMemberSync(){
   const ageInput=document.getElementById('clientAge');
   const incomeList=document.getElementById('incomeList');
@@ -1821,7 +1797,7 @@ function clearExampleData(scope){
     if(debtPayment) debtPayment.value=0;
     calcAssets(); calcLiabilities();
   }else if(scope==='goals'){
-    goals.forEach(function(goal){goal.amount=0;goal.existing=0;});
+    goals.forEach(function(goal){goal.amount=0;});
     renderGoals();
   }
   saveData();
@@ -1992,9 +1968,9 @@ function fmtFull(n){
    人生规划目标管理
    ==================================================================== */
 let goals=[
-  {name:'购车',type:'short',priority:'mid',years:2,amount:150000,existing:0},
-  {name:'子女教育基金',type:'mid',priority:'mid',years:8,amount:800000,existing:50000},
-  {name:'退休储备',type:'long',priority:'mid',years:25,amount:5000000,existing:350000}
+  {name:'购车',type:'short',priority:'mid',years:2,amount:150000},
+  {name:'子女教育基金',type:'mid',priority:'mid',years:8,amount:800000},
+  {name:'退休储备',type:'long',priority:'mid',years:25,amount:5000000}
 ];
 
 function renderGoals(){
@@ -2008,7 +1984,7 @@ function renderGoals(){
     div.innerHTML=''
       +'<div class="form-group" style="grid-column:1/-1">'
       +'<label class="form-label">目标名称</label>'
-      +'<input class="form-input" value="'+escapeHTML(g.name)+'" oninput="goals['+i+'].name=this.value">'
+      +'<input class="form-input" value="'+g.name+'" oninput="goals['+i+'].name=this.value">'
       +'</div>'
       +'<div class="form-group">'
       +'<label class="form-label">期限类型</label>'
@@ -2043,7 +2019,8 @@ function renderGoals(){
       +'<input class="form-input" type="number" min="0" value="'+g.amount+'" oninput="goals['+i+'].amount=parseFloat(this.value)||0">'
       +'<span class="form-unit">元</span>'
       +'</div>'
-      +'</div>';
+      +'</div>'
+;
     var btn=document.createElement('button');
     btn.className='btn-remove';
     btn.style.cssText='position:absolute;top:8px;right:8px;height:28px;width:28px;z-index:1';
@@ -2055,7 +2032,7 @@ function renderGoals(){
 }
 
 function addGoalItem(){
-  goals.push({name:'新目标',type:'mid',priority:'mid',years:5,amount:100000,existing:0});
+  goals.push({name:'新目标',type:'mid',priority:'mid',years:5,amount:100000});
   renderGoals();
   queueAutoSave();
 }
@@ -2304,7 +2281,7 @@ function renderFamilyUI(){
       <div class="family-member-head" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
         <div class="family-member-meta" style="display:flex;align-items:center;gap:8px">
           <span class="family-member-name" style="font-weight:700;font-size:15px">👤 ${m.name}</span>
-          <select class="form-select" style="width:auto;padding:4px 8px;font-size:12px" onchange="changeMemberRelationship(${m.id},this.value)">
+          <select class="form-select" style="width:auto;padding:4px 8px;font-size:12px" onchange="familyMembers.find(x=>x.id===${m.id}).relationship=this.value;renderFamilyUI()">
             <option value="本人" ${m.relationship==='本人'?'selected':''}>本人</option>
             <option value="配偶" ${m.relationship==='配偶'?'selected':''}>配偶</option>
             <option value="子女" ${m.relationship==='子女'?'selected':''}>子女</option>
@@ -2469,35 +2446,33 @@ function generateReport(){
   const insurancePremiumRatio=income>0?(insuranceExpense/income*100):0;
 
   // 保险安全度（保单配置完善程度——基于家庭成员现有保单与需求对比）
-  var raisingExpense2=0;
-  document.querySelectorAll('#expenseList .line-item').forEach(function(item){
-    if(isRaisingExpenseItem(item)){
-      raisingExpense2+=parseFloat(item.querySelector('input[type=number]')?.value)||0;
+  let insuranceSafety=100;
+  const memberSafetyScores=[];
+  familyMembers.forEach(m=>{
+    let covered=0,total=0;
+    const isSenior=m.relationship==='父母'||m.age>=55;
+    if(isSenior){
+      const hasBasicMedical=['employee','resident'].includes(m.basicMedical);
+      const reserveTarget=hasBasicMedical?200000:500000;
+      total++; if(hasBasicMedical) covered++;
+      total++; if((m.medicalReserve||0)>=reserveTarget) covered++;
+      total++; if((m.existingAccident||0)*10000>=300000) covered++;
+      if(m.isBreadwinner&&m.monthlyIncome>0){total++; if((m.existingTermLife||0)>0) covered++;}
+      memberSafetyScores.push(covered/total*100);
+      return;
     }
-  });
-  var annualRaisingExpense2=raisingExpense2*12;
-  var memberResults=familyMembers.map(function(m){return calcMemberInsurance(m,totalLiab,expense,annualRaisingExpense2);});
-  var memberSafetyScores=[];
-  memberResults.forEach(function(r){
-    var m=r.member;
-    var coverages=[];
-    if(r.isSenior){
-      var hasBasicMedical=['employee','resident'].includes(m.basicMedical);
-      coverages.push(hasBasicMedical?100:0);
-      var reserveTarget=r.medicalReserveTarget;
-      if(reserveTarget>0) coverages.push(Math.min((m.medicalReserve||0)/reserveTarget,1)*100);
-      if(r.accidentSuggested>0) coverages.push(Math.min((m.existingAccident||0)*10000/r.accidentSuggested,1)*100);
-      if(r.needLife&&r.termLifeNeed>0) coverages.push(Math.min((m.existingTermLife||0)*10000/r.termLifeNeed,1)*100);
-    }else{
-      if(r.needLife&&r.termLifeNeed>0) coverages.push(Math.min((m.existingTermLife||0)*10000/r.termLifeNeed,1)*100);
-      if(r.criticalIllSuggested>0) coverages.push(Math.min((m.existingCriticalIll||0)*10000/r.criticalIllSuggested,1)*100);
-      if(m.existingMedical!=='none') coverages.push(100); else coverages.push(0);
-      if(r.accidentSuggested>0) coverages.push(Math.min((m.existingAccident||0)*10000/r.accidentSuggested,1)*100);
-    }
-    if(coverages.length>0) memberSafetyScores.push(coverages.reduce(function(a,b){return a+b;},0)/coverages.length);
+    // 定期寿险（仅经济支柱需要）
+    if(m.isBreadwinner&&m.monthlyIncome>0){total++; if(m.existingTermLife>0) covered++;}
+    // 重疾险
+    total++; if(m.existingCriticalIll>0) covered++;
+    // 医疗险
+    total++; if(m.existingMedical!=='none') covered++;
+    // 意外险
+    total++; if(m.existingAccident>0) covered++;
+    if(total>0) memberSafetyScores.push(covered/total*100);
     else memberSafetyScores.push(100);
   });
-  var insuranceSafety=memberSafetyScores.length>0?memberSafetyScores.reduce(function(a,b){return a+b;},0)/memberSafetyScores.length:0;
+  insuranceSafety=memberSafetyScores.length>0?memberSafetyScores.reduce((a,b)=>a+b,0)/memberSafetyScores.length:0;
 
   // 清偿率
   const sv=Engine.solvencyRatio(netWorth,totalAssets);
@@ -3180,12 +3155,12 @@ function renderRadarChart(category,metrics){
   const dimGroups=[
     {cat:'财务安全指标',rows:[
       {key:'储蓄率',meaning:'月结余占月收入比例，反映储蓄能力',value:s.toFixed(1)+'%',range:'≥20%合理 / ≥30%优秀',isOk:s>=20},
-      {key:'保费支出比例',meaning:'年保费占年收入比例，兼顾保障与储蓄',value:p.toFixed(1)+'%',range:'5%-10%最合理 / <5%需核查保障',isOk:p>=5&&p<=10},
-      {key:'保险安全度',meaning:'保单配置完善程度（覆盖/需求）',value:is.toFixed(0)+'%',range:'≥80%完善 / ≥60%基本',isOk:is>=60}
+      {key:'保费支出比例',meaning:'年保费占年收入比例，兼顾保障与储蓄',value:p.toFixed(1)+'%',range:(is>=60?(p<5?'覆盖基本达标，可适当增配':p<=10?'5%-10%最合理':p<=15?'覆盖达标，保费略高可优化':'覆盖达标，保费偏高建议复核'):(p<5?'保费投入不足，保障缺口严重':p>=5&&p<=10?'保费合理但覆盖不足，优先补全保障':p>15?'保费严重超标，建议优化':'保费偏高，核查必要性')),isOk:p>=5&&p<=10},
+      {key:'保险安全度',meaning:'保单配置完善程度（覆盖/需求）',value:is.toFixed(0)+'%',range:'≥80%完善 / ≥60%基本',isOk:is>=80}
     ]},
     {cat:'债务管理指标',rows:[
       {key:'流动性',meaning:'流动资产可覆盖月支出的月数',value:l.toFixed(1)+'个月',range:'3-12个月合理',isOk:l>=3&&l<=12},
-      {key:'月度偿债管理',meaning:'月还款占月收入比例，反映偿债压力',value:d.toFixed(1)+'%',range:'<36%合理 / <50%警戒',isOk:d<36},
+      {key:'月度偿债管理',meaning:'月还款占月收入比例，反映偿债压力',value:d.toFixed(1)+'%',range:'≤36%合理 / ≤50%警戒',isOk:d<=36},
       {key:'清偿率',meaning:'净资产占总资产比例，反映资产负债健康度',value:sv.toFixed(1)+'%',range:'≥90%优秀 / 越接近100%越安全',isOk:sv>=50}
     ]},
     {cat:'财务自由指标',rows:[
@@ -3347,52 +3322,70 @@ function renderROIChart(principal,monthlyContribution,workYears,currentAge,retir
   });
 }
 
-/* ---- 目标达成分析 ---- */
+/* ---- 目标达成分析（瀑布分配：已足额目标的多余本金自动流向其他目标） ---- */
 function renderGoalAnalysis(investAssets,surplus){
   var body=document.getElementById('goalTableBody');
-  var riskReturn={short:0.02,mid:0.035,long:0.065};
   var priorityWeight={high:3,mid:2,low:1};
   var priorityLabel={high:'高优先',mid:'中优先',low:'低优先'};
   var priorityColor={high:'var(--c-danger)',mid:'var(--c-accent)',low:'var(--c-text-sec)'};
-  var goalCount=goals.length||1;
-  var normalizedGoals=goals.map(function(g,index){
-    var priority=priorityWeight[g.priority]?g.priority:'mid';
-    return {goal:g,index:index,priority:priority,weight:priorityWeight[priority]};
+  var priorityOrder={high:0,mid:1,low:2};
+
+  // 构建目标列表，带权重
+  var items=goals.map(function(g,index){
+    var p=g.priority&&priorityWeight[g.priority]?g.priority:'mid';
+    return {goal:g,index:index,priority:p,weight:priorityWeight[p],order:priorityOrder[p]};
   });
-  var totalWeight=normalizedGoals.reduce(function(total,item){return total+item.weight;},0)||1;
 
-  var rows=normalizedGoals.sort(function(a,b){
-    return b.weight-a.weight||a.index-b.index;
-  }).map(function(item){
+  // 排序：优先级高→低，同优先级内金额小→大（小目标先满足，多余流向大目标）
+  items.sort(function(a,b){
+    if(a.order!==b.order) return a.order-b.order;
+    return a.goal.amount-b.goal.amount;
+  });
+
+  // 瀑布分配本金
+  var pool=investAssets;
+  for(var i=0;i<items.length;i++){
+    // 当前位置到末尾的总权重
+    var remWeight=0;
+    for(var j=i;j<items.length;j++) remWeight+=items[j].weight;
+    var share=remWeight>0?pool*items[i].weight/remWeight:0;
+    items[i].allocatedPrincipal=Math.min(items[i].goal.amount,share);
+    pool-=items[i].allocatedPrincipal;
+  }
+
+  // 瀑布分配月结余（同样逻辑）
+  var surplusPool=Math.max(0,surplus);
+  for(var i2=0;i2<items.length;i2++){
+    var remW2=0;
+    for(var j2=i2;j2<items.length;j2++) remW2+=items[j2].weight;
+    var sShare=remW2>0?surplusPool*items[i2].weight/remW2:0;
+    // 月结余不设上限（未足额的目标需要更多）
+    items[i2].allocatedSurplus=sShare;
+    surplusPool-=sShare;
+  }
+
+  // 渲染表格行
+  var rows=items.map(function(item){
     var g=item.goal;
-    var allocatedPrincipal=investAssets*item.weight/totalWeight;
-    var allocatedSurplus=Math.max(0,surplus)*item.weight/totalWeight;
-    var rate=riskReturn[g.type]||0.05;
-    // 可用本金按优先级分配投资资产
-    var effectiveExisting=allocatedPrincipal;
-    var required=Engine.requiredMonthlyContribution(g.amount,effectiveExisting,rate,g.years);
-    var pv=Engine.presentValue(g.amount,rate,g.years);
-    var canAfford=allocatedSurplus>=required;
-    var inflationAdjusted=Engine.inflate(g.amount,0.03,g.years);
-
-    var probability;
-    if(allocatedSurplus>=required*1.5) probability='>90%';
-    else if(allocatedSurplus>=required*1.2) probability='75-90%';
-    else if(allocatedSurplus>=required) probability='50-75%';
-    else if(allocatedSurplus>=required*0.7) probability='25-50%';
-    else probability='<25%';
+    var allocP=item.allocatedPrincipal;
+    var allocS=item.allocatedSurplus;
+    var months=g.years*12;
+    var gap=Math.max(0,g.amount-allocP);
+    var required=months>0?gap/months:gap;
+    var canAfford=allocS>=required;
 
     var status=canAfford?'<span style="color:var(--c-success);font-weight:600">\u2713 \u53EF\u8FBE\u6210</span>':
       '<span style="color:var(--c-danger);font-weight:600">\u26A0 \u9700\u8C03\u6574</span>';
 
+    var principalNote=allocP>g.amount?'<br><span style="font-size:10px;color:var(--c-success)">已足额，余\u00A5'+fmt(allocP-g.amount)+'流向其他目标</span>':'';
+    var shortfall=required>allocS?'<br><span style="font-size:10px;color:var(--c-danger)">月差\u00A5'+fmtFull(Math.max(0,required-allocS))+'</span>':'';
+
     return '<tr class="goal-analysis-row">'
-      +'<td data-label="目标"><b>'+escapeHTML(g.name)+'</b></td>'
-      +'<td data-label="优先级"><span style="font-weight:700;color:'+priorityColor[item.priority]+'">'+priorityLabel[item.priority]+'</span><br><span style="font-size:10px;color:var(--c-text-sec)">月结余份额 '+fmtFull(allocatedSurplus)+'</span></td>'
+      +'<td data-label="目标"><b>'+g.name+'</b></td>'
+      +'<td data-label="优先级"><span style="font-weight:700;color:'+priorityColor[item.priority]+'">'+priorityLabel[item.priority]+'</span><br><span style="font-size:10px;color:var(--c-text-sec)">分摊本金\u00A5'+fmt(allocP)+'</span>'+principalNote+'</td>'
       +'<td data-label="期限">'+(g.type==='short'?'\u77ED\u671F':g.type==='mid'?'\u4E2D\u671F':'\u957F\u671F')+'('+g.years+'\u5E74)</td>'
-      +'<td data-label="目标金额">\u00A5'+fmt(g.amount)+'<br><span style="font-size:11px;color:var(--c-text-sec)">\u901A\u80C0\u540E:\u00A5'+fmt(inflationAdjusted)+'</span></td>'
-      +'<td data-label="所需月投" style="font-weight:600;color:'+(canAfford?'var(--c-success)':'var(--c-danger)')+'" >\u00A5'+fmtFull(required)+'/\u6708</td>'
-      +'<td data-label="现值需求">\u00A5'+fmt(pv)+'</td>'
-      +'<td data-label="达成概率">'+probability+'</td>'
+      +'<td data-label="目标金额">\u00A5'+fmt(g.amount)+'</td>'
+      +'<td data-label="所需月投" style="font-weight:600;color:'+(canAfford?'var(--c-success)':'var(--c-danger)')+'" >\u00A5'+fmtFull(required)+'/\u6708'+shortfall+'</td>'
       +'<td data-label="状态">'+status+'</td>'
       +'</tr>';
   });
@@ -3400,9 +3393,9 @@ function renderGoalAnalysis(investAssets,surplus){
   var headerRow='';
   if(investAssets>0){
     headerRow='<tr class="goal-allocation-note" style="background:#fffbeb">'
-      +'<td colspan="8" style="padding:8px 12px;font-size:12px;color:var(--c-accent);font-weight:600">'
+      +'<td colspan="6" style="padding:8px 12px;font-size:12px;color:var(--c-accent);font-weight:600">'
       +'\uD83D\uDCB0 \u60A8\u5F53\u524D\u5171\u6709\u6295\u8D44\u8D44\u4EA7 \u00A5'+fmt(investAssets)
-      +'，已按目标优先级分配：高优先权重3、中优先权重2、低优先权重1；同级目标平均分配。'
+      +'，瀑布分配：高优先→中优先→低优先；同优先级内小目标先满足，多余本金自动流向其他目标。'
       +'</td></tr>';
   }
 
@@ -3424,7 +3417,7 @@ function renderComprehensiveReview(health,metrics,fin){
     {name:'\u4FDD\u8D39\u652F\u51FA\u6BD4\u4F8B',val:metrics.ipr,score:health.detail['\u4FDD\u8D39\u652F\u51FA\u6BD4\u4F8B'],max:12,unit:'%',good:metrics.ipr>=5&&metrics.ipr<=10},
     {name:'\u4FDD\u9669\u5B89\u5168\u5EA6',val:metrics.is,score:health.detail['\u4FDD\u9669\u5B89\u5168\u5EA6'],max:12,unit:'%',good:metrics.is>=60},
     {name:'\u6D41\u52A8\u6027',val:metrics.liq,score:health.detail['\u6D41\u52A8\u6027'],max:12,unit:'\u4E2A\u6708',good:metrics.liq>=3&&metrics.liq<=12},
-    {name:'\u6708\u5EA6\u507F\u503A\u7BA1\u7406',val:metrics.dti,score:health.detail['\u6708\u5EA6\u507F\u503A\u7BA1\u7406'],max:10,unit:'%',good:metrics.dti<36},
+    {name:'\u6708\u5EA6\u507F\u503A\u7BA1\u7406',val:metrics.dti,score:health.detail['\u6708\u5EA6\u507F\u503A\u7BA1\u7406'],max:10,unit:'%',good:metrics.dti<=36},
     {name:'\u6E05\u507F\u7387',val:(metrics.sv*100),score:health.detail['\u6E05\u507F\u7387'],max:10,unit:'%',good:metrics.sv>=0.5},
     {name:'\u6295\u8D44\u8D44\u4EA7\u5360\u6BD4',val:metrics.ir,score:health.detail['\u6295\u8D44\u8D44\u4EA7\u5360\u6BD4'],max:16,unit:'%',good:metrics.ir>=30},
     {name:'\u8D22\u52A1\u81EA\u7531\u5EA6',val:metrics.ff,score:health.detail['\u8D22\u52A1\u81EA\u7531\u5EA6'],max:16,unit:'%',good:metrics.ff>=30}
@@ -3462,7 +3455,7 @@ function renderComprehensiveReview(health,metrics,fin){
   if(fin.surplus<=0) actions.push({level:'立即',title:'先止住月度现金流缺口',action:'逐项核对支出，先暂停非必要消费，并确定可执行的增收方案。',standard:'月结余由 ¥'+fmt(fin.surplus)+' 提升至至少 ¥0，连续保持2个月。',time:'7天内制定，30天内复盘'});
   if(metrics.liq<3) actions.push({level:'优先',title:'补足最低应急备用金',action:'将每月结余优先转入独立的高流动性账户，暂缓非刚性长期投资。',standard:'流动资产达到3个月支出，即 ¥'+fmt(emergencyTarget)+'；当前还差约 ¥'+fmt(emergencyGap)+'。',time:'本周开始，每月检查'});
   if(metrics.is<60) actions.push({level:'优先',title:'完成家庭保障缺口核对',action:'按家庭成员逐一核对医保、医疗险、重疾险、意外险和经济支柱定期寿险，先补基础保障，再考虑储蓄型保险。',standard:'报告中的成员保障缺口逐项确认，保险安全度由 '+isVal+'% 提升至60%以上。',time:'30天内完成核对'});
-  if(metrics.dti>=36) actions.push({level:'优先',title:'降低偿债压力',action:'列出每笔负债利率与剩余期限，优先处理高成本负债，并评估提前还款或重组。',standard:'月度偿债比例由 '+d+'% 降至36%以下。',time:'30天内形成还款顺序'});
+  if(metrics.dti>36) actions.push({level:'优先',title:'降低偿债压力',action:'列出每笔负债利率与剩余期限，优先处理高成本负债，并评估提前还款或重组。',standard:'月度偿债比例由 '+d+'% 降至36%以下。',time:'30天内形成还款顺序'});
   if(metrics.sr<20&&fin.surplus>0) actions.push({level:'随后',title:'建立“先存后花”机制',action:'发薪后自动转入目标账户，不使用月末剩余金额作为储蓄标准。',standard:'每月储蓄达到约 ¥'+fmt(savingTarget)+'，储蓄率由 '+s+'% 提升至20%以上并保持3个月。',time:'下个发薪日开始'});
   if(metrics.ir<30&&metrics.liq>=3&&fin.surplus>0) actions.push({level:'随后',title:'按目标配置长期投资资金',action:'保留应急金后，将可长期不用的结余按风险偏好分批投入，并设置年度再平衡。',standard:'形成书面目标比例和每月投入金额；投资资产占比由 '+ir+'% 逐步接近30%以上。',time:'60—90天内启动'});
   if(actions.length===0) actions.push({level:'保持',title:'建立季度复盘制度',action:'核对实际收支、净资产、保险变化及目标进度，偏离计划时及时调整。',standard:'每季度完成一次数据更新，每年完成一次完整财务诊断。',time:'每季度末'});
@@ -3498,7 +3491,7 @@ function renderComprehensiveReview(health,metrics,fin){
       +'<div class="action-plan-detail" style="font-size:12px;line-height:1.6;color:var(--c-text-sec)"><b>完成标准：</b>'+a.standard+'</div></div></div>';
   }).join('');
 
-  var fpMsg=freedomProgress>0?'（已积累投资资产'+ia+'）':'';
+  var fpMsg=freedomProgress>0?'（已积累投资资产'+ia+'）':'<br><span style="font-size:12px;color:var(--c-accent)">💡 当前暂无被动收入。建议从指数基金定投（如沪深300）或货币基金开始，每月固定投入，逐步建立被动收入来源。</span>';
   var yearsToFree=calcYearsToFreedom(fin.investAssets,fin.expense,fin.surplus);
   var yearsMsg=fin.investAssets>0?'预计'+yearsToFree+'年达到财务自由':'';
 
@@ -3610,9 +3603,7 @@ function loadData(){
     if(data.risk) selectedRisk=data.risk;
     if(data.familyMembers){
       familyMembers=data.familyMembers.map(m=>({...m,basicMedical:m.basicMedical||'unknown',medicalReserve:m.medicalReserve||0}));
-      var maxId=0;
-      familyMembers.forEach(function(m){if(m.id>maxId) maxId=m.id;});
-      memberIdCounter=Math.max(maxId+1,familyMembers.length+1);
+      memberIdCounter=familyMembers.length+1;
     }
     if(data.goals) goals=data.goals.map(function(g){return {...g,priority:g.priority||'mid'};});
 
