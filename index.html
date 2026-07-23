@@ -1161,6 +1161,11 @@ body{
         </div>
       </div>
 
+      <div class="btn-row" style="margin-bottom:16px">
+        <button class="btn btn-accent" onclick="syncAllFormData();generateReport()">🔄 重新分析</button>
+        <span style="font-size:11px;color:var(--c-text-sec);align-self:center">修改数据后点击刷新，无需离开此页面</span>
+      </div>
+
       <!-- 资产负债汇总表 + 月度收支结余表 -->
       <div class="chart-row">
         <div class="card">
@@ -1297,7 +1302,6 @@ body{
       <div class="btn-row">
         <button class="btn btn-ghost" onclick="goStep(5)">← 修改规划</button>
         <button class="btn btn-ghost" onclick="printReport()">保存报告</button>
-        <button class="btn btn-accent" onclick="syncAllFormData();generateReport()">🔄 重新分析</button>
       </div>
     </div>
 
