@@ -524,6 +524,7 @@ body{
   /* 表单元素加大触控区域 */
   .form-input,.form-select{padding:10px 12px;font-size:16px}
   .goal-card .form-input,.goal-card .form-select{font-size:14px;padding:8px 10px}
+   .asset-cat,.expense-cat{font-size:13px!important}
   .line-item{grid-template-columns:0.9fr 1.1fr 28px;gap:6px}
   #expenseList .line-item{grid-template-columns:minmax(120px,1fr) minmax(100px,.8fr) minmax(126px,.75fr) 28px}
   #assetList .line-item{grid-template-columns:minmax(0,1.35fr) minmax(88px,.65fr) 28px}
@@ -903,7 +904,7 @@ body{
               <select class="form-input asset-cat" onchange="calcAssets()" style="font-size:13px">
                 <option value="self" selected>自住房产</option>
                 <option value="invest">投资性房产</option>
-                <option value="liquid">活期存款/货币基金</option>
+                <option value="liquid">银行存款</option>
                 <option value="invest">股票/基金/投资</option>
                 <option value="invest">理财型保险</option>
                 <option value="invest">黄金/大宗商品</option>
@@ -919,7 +920,7 @@ body{
               <select class="form-input asset-cat" onchange="calcAssets()" style="font-size:13px">
                 <option value="self">自住房产</option>
                 <option value="invest" selected>投资性房产</option>
-                <option value="liquid">活期存款/货币基金</option>
+                <option value="liquid">银行存款</option>
                 <option value="invest">股票/基金/投资</option>
                 <option value="invest">理财型保险</option>
                 <option value="invest">黄金/大宗商品</option>
@@ -935,7 +936,7 @@ body{
               <select class="form-input asset-cat" onchange="calcAssets()" style="font-size:13px">
                 <option value="self">自住房产</option>
                 <option value="invest">投资性房产</option>
-                <option value="liquid" selected>活期存款/货币基金</option>
+                <option value="liquid" selected>银行存款</option>
                 <option value="invest">股票/基金/投资</option>
                 <option value="invest">理财型保险</option>
                 <option value="invest">黄金/大宗商品</option>
@@ -951,7 +952,7 @@ body{
               <select class="form-input asset-cat" onchange="calcAssets()" style="font-size:13px">
                 <option value="self">自住房产</option>
                 <option value="invest">投资性房产</option>
-                <option value="liquid">活期存款/货币基金</option>
+                <option value="liquid">银行存款</option>
                 <option value="invest" selected>股票/基金/投资</option>
                 <option value="invest">理财型保险</option>
                 <option value="invest">黄金/大宗商品</option>
@@ -967,7 +968,7 @@ body{
               <select class="form-input asset-cat" onchange="calcAssets()" style="font-size:13px">
                 <option value="self">自住房产</option>
                 <option value="invest">投资性房产</option>
-                <option value="liquid">活期存款/货币基金</option>
+                <option value="liquid">银行存款</option>
                 <option value="invest">股票/基金/投资</option>
                 <option value="invest" selected>理财型保险</option>
                 <option value="invest">黄金/大宗商品</option>
@@ -983,7 +984,7 @@ body{
               <select class="form-input asset-cat" onchange="calcAssets()" style="font-size:13px">
                 <option value="self">自住房产</option>
                 <option value="invest">投资性房产</option>
-                <option value="liquid">活期存款/货币基金</option>
+                <option value="liquid">银行存款</option>
                 <option value="invest">股票/基金/投资</option>
                 <option value="invest">理财型保险</option>
                 <option value="invest" selected>黄金/大宗商品</option>
@@ -999,7 +1000,7 @@ body{
               <select class="form-input asset-cat" onchange="calcAssets()" style="font-size:13px">
                 <option value="self">自住房产</option>
                 <option value="invest">投资性房产</option>
-                <option value="liquid">活期存款/货币基金</option>
+                <option value="liquid">银行存款</option>
                 <option value="invest">股票/基金/投资</option>
                 <option value="invest">理财型保险</option>
                 <option value="invest">黄金/大宗商品</option>
@@ -1444,7 +1445,7 @@ const Engine = {
     // === 债务管理指标 (32分) ===
     // 4. 流动性 (0-12) — 3-6月最佳
     const liq=d.liquidityRatio;
-    const lScore = liq>=3&&liq<=6?12 : liq>6&&liq<=12?9 : liq>12?7 : liq>=2?6 : liq>=1?3 : liq>0?1 : 0;
+    const lScore = liq>=3&&liq<=6?12 : liq>6&&liq<=12?9 : liq>12?12 : liq>=2?6 : liq>=1?3 : liq>0?1 : 0;
 
     // 5. 月度偿债管理 (0-10)
     const dti=d.debtToIncome;
@@ -1593,7 +1594,7 @@ document.addEventListener('change',function(e){
 const ASSET_META={
   self:{label:'自住房产',example:'例：自住商品房',bucket:null},
   realestate:{label:'投资性房产',example:'例：出租房/商铺',bucket:'equity'},
-  liquid:{label:'活期存款/货币基金',example:'例：银行卡活期、货币基金',bucket:'cash'},
+  liquid:{label:'银行存款',example:'例：活期存款、定期存款、货币基金',bucket:'cash'},
   equity:{label:'股票/基金/投资',example:'例：股票、权益基金',bucket:'equity'},
   insurance:{label:'理财型保险',example:'例：年金险、增额终身寿',bucket:'bond'},
   commodity:{label:'黄金/大宗商品',example:'例：黄金ETF、实物黄金',bucket:'commodity'},
@@ -1841,7 +1842,7 @@ function addAssetItem(){
       <option value="self">自住房产（例：自住商品房）</option>
       <option value="realestate">投资性房产（例：出租房/商铺）</option>
       <option value="equity" selected>股票/基金/投资（例：股票、权益基金）</option>
-      <option value="liquid">活期存款/货币基金（例：银行卡活期、货币基金）</option>
+      <option value="liquid">银行存款（例：活期存款、定期存款、货币基金）</option>
       <option value="insurance">理财型保险（例：年金险、增额终身寿）</option>
       <option value="commodity">黄金/大宗商品（例：黄金ETF、实物黄金）</option>
       <option value="other">其他资产（例：公积金、债权类资产）</option>
@@ -2519,7 +2520,7 @@ function generateReport(){
   const note=document.getElementById('strawHatNote');
   if(note){
     const realEstateNote=investRealEstateAssets>0?`其中投资性房产 ¥${fmt(investRealEstateAssets)} 保留 <b>3.5%/年</b> 收益假设，同时计入 <b>${(realEstateDepreciationRate*100).toFixed(1)}%/年</b> 折减。`:'';
-    note.innerHTML=`💡 <b>草帽图说明：</b>金色区域为<b>积累期</b>（当前至退休），以草帽图可投资资产（¥${fmt(investAssets)}）+月结余（¥${fmt(surplus)}/月）定投，按3.5%年化复利增长。可投资资产包括投资性房产、活期存款/货币基金（用于再平衡）、股票/基金、理财型保险及黄金/大宗商品；不含自住房、公积金及出借等取用时点不确定资产。${realEstateNote}<b>红色虚线</b>为<b>退休后资产提款期</b>：以当前退休基础月支出 <b>¥${fmt(retirementMonthlyExpense)}</b> 为起点（已剔除${excludedNames.length?excludedNames.join('、'):'育儿/赡养及保障型保险'}共 ¥${fmt(retirementExcluded)}/月），<b>按 3% 年通胀递增</b>，退休首年月支出预计为 <b>¥${fmt(retirementStartMonthly)}</b>。退休金按当前月收入的 <b>${Math.round(pensionReplacementRate*100)}%</b>，即 <b>¥${fmt(retirementMonthlyPension)}/月</b>抵减支出，首年预计从资产提款 <b>¥${fmt(firstYearAssetWithdrawal)}/月</b>；退休后生活费继续按 <b>3%</b> 年通胀递增。`;
+    note.innerHTML=`💡 <b>草帽图说明：</b>金色区域为<b>积累期</b>（当前至退休），以草帽图可投资资产（¥${fmt(investAssets)}）+月结余（¥${fmt(surplus)}/月）定投，按3.5%年化复利增长。可投资资产包括投资性房产、银行存款（用于再平衡）、股票/基金、理财型保险及黄金/大宗商品；不含自住房、公积金及出借等取用时点不确定资产。${realEstateNote}<b>红色虚线</b>为<b>退休后资产提款期</b>：以当前退休基础月支出 <b>¥${fmt(retirementMonthlyExpense)}</b> 为起点（已剔除${excludedNames.length?excludedNames.join('、'):'育儿/赡养及保障型保险'}共 ¥${fmt(retirementExcluded)}/月），<b>按 3% 年通胀递增</b>，退休首年月支出预计为 <b>¥${fmt(retirementStartMonthly)}</b>。退休金按当前月收入的 <b>${Math.round(pensionReplacementRate*100)}%</b>，即 <b>¥${fmt(retirementMonthlyPension)}/月</b>抵减支出，首年预计从资产提款 <b>¥${fmt(firstYearAssetWithdrawal)}/月</b>；退休后生活费继续按 <b>3%</b> 年通胀递增。`;
   }
 
   // 目标达成分析
@@ -2596,7 +2597,7 @@ function renderAllocTable(alloc,investAmount){
   const note=document.getElementById('allocNote');
   if(note){
     note.innerHTML=`<div style="padding:10px 12px;background:var(--c-bg);border-radius:6px;font-size:12px;color:var(--c-text-sec);line-height:1.6">
-      💡 <b>推荐比例</b>严格对应第 1 步选择的风险偏好：保守型为现金20% / 长债40% / 股票基金30% / 大宗商品10%；平衡型为现金20% / 长债30% / 股票基金40% / 大宗商品10%；进取型为现金10% / 长债30% / 股票基金40% / 大宗商品20%。<br><b>当前比例</b>根据资产明细自动计算：股票/基金和投资性房产归入权益类；黄金归入大宗商品；活期存款/货币基金归入现金短债；理财型保险归入稳健类（长债）。自住房产及其他资产不计入投资组合。
+      💡 <b>推荐比例</b>严格对应第 1 步选择的风险偏好：保守型为现金20% / 长债40% / 股票基金30% / 大宗商品10%；平衡型为现金20% / 长债30% / 股票基金40% / 大宗商品10%；进取型为现金10% / 长债30% / 股票基金40% / 大宗商品20%。<br><b>当前比例</b>根据资产明细自动计算：股票/基金和投资性房产归入权益类；黄金归入大宗商品；银行存款归入现金短债；理财型保险归入稳健类（长债）。自住房产及其他资产不计入投资组合。
     </div>`;
   }
 }
@@ -3159,7 +3160,7 @@ function renderRadarChart(category,metrics){
       {key:'保险安全度',meaning:'保单配置完善程度（覆盖/需求）',value:is.toFixed(0)+'%',range:'≥80%完善 / ≥60%基本',isOk:is>=80}
     ]},
     {cat:'债务管理指标',rows:[
-      {key:'流动性',meaning:'流动资产可覆盖月支出的月数',value:l.toFixed(1)+'个月',range:'3-12个月合理',isOk:l>=3&&l<=12},
+      {key:'流动性',meaning:'流动资产可覆盖月支出的月数',value:l.toFixed(1)+'个月',range:'3-12个月合理 / >12个月充裕（多余可投资）',isOk:l>=3&&l<=12},
       {key:'月度偿债管理',meaning:'月还款占月收入比例，反映偿债压力',value:d.toFixed(1)+'%',range:'≤36%合理 / ≤50%警戒',isOk:d<=36},
       {key:'清偿率',meaning:'净资产占总资产比例，反映资产负债健康度',value:sv.toFixed(1)+'%',range:'≥90%优秀 / 越接近100%越安全',isOk:sv>=50}
     ]},
