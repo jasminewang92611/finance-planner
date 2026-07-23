@@ -497,6 +497,16 @@ body{
   .card-body{padding:12px 14px}
   .card-title{font-size:14px}
   .card{margin-bottom:12px}
+  #step2 .card-header,#step3 .card-header,#step5 .card-header{flex-wrap:wrap;gap:8px}
+  #step2 .card-header>div,#step3 .card-header>div,#step5 .card-header>div{
+    width:100%;display:grid!important;grid-template-columns:1fr 1fr;gap:8px!important
+  }
+  #step2 .card-header button,#step3 .card-header button,#step5 .card-header button{
+    width:100%;min-height:40px;justify-content:center;margin:0;white-space:normal;line-height:1.3
+  }
+  .family-member-head{align-items:flex-start!important}
+  .family-member-meta{flex-wrap:wrap!important;min-width:0;flex:1}
+  .family-member-name{white-space:nowrap}
   
   /* 表格 - 水平滚动 */
   .alloc-table{font-size:11px}
@@ -526,6 +536,28 @@ body{
   /* 图表 */
   .chart-wrap{height:220px}
   .chart-wrap-lg{height:280px}
+
+  /* 目标分析表在手机端改为信息卡，避免九列横向滚动 */
+  #goalTable{display:block}
+  #goalTable thead{display:none}
+  #goalTable tbody{display:block}
+  #goalTable .goal-allocation-note{display:block;margin-bottom:8px}
+  #goalTable .goal-allocation-note td{display:block;width:100%!important;border:0;background:var(--c-warning-bg)}
+  #goalTable .goal-analysis-row{
+    display:grid;grid-template-columns:1fr 1fr;gap:0;
+    border:1px solid var(--c-border);border-radius:8px;margin-bottom:10px;
+    overflow:hidden;background:var(--c-card)
+  }
+  #goalTable .goal-analysis-row td{
+    display:block;padding:8px 10px!important;border-bottom:1px solid var(--c-border);
+    min-width:0;overflow-wrap:anywhere
+  }
+  #goalTable .goal-analysis-row td::before{
+    content:attr(data-label);display:block;font-size:10px;color:var(--c-text-sec);
+    margin-bottom:2px;font-weight:500
+  }
+  #goalTable .goal-analysis-row td:first-child{grid-column:1/-1;background:var(--c-bg)}
+  #goalTable .goal-analysis-row td:last-child{border-bottom:0}
   
   /* Toast */
   .toast{bottom:12px;right:12px;left:12px;text-align:center;font-size:13px}
@@ -550,6 +582,12 @@ body{
   #expenseList .btn-remove{grid-column:3;grid-row:1}
   #assetList .line-item{grid-template-columns:minmax(0,1.3fr) minmax(84px,.7fr) 28px}
   .summary-bar{flex-direction:column;text-align:center}
+  .family-member-head{display:block!important}
+  .family-member-head>.btn-remove{float:right;margin-top:-30px}
+  .family-member-meta{padding-right:32px}
+  .family-member-meta>span:last-child{width:100%;margin-top:2px}
+  #comprehensiveReview,#comprehensiveReview *{min-width:0!important;max-width:100%}
+  #comprehensiveReview>div{gap:10px!important;flex-direction:column!important}
 }
 
 /* ==================== 移动端导航面板 ==================== */
@@ -2226,10 +2264,10 @@ function renderFamilyUI(){
     const isSelf=m.relationship==='本人';
     const isSenior=m.relationship==='父母'||m.age>=55;
     const isChild=m.relationship==='子女'&&m.age<18;
-    return `<div style="border:1.5px solid var(--c-border);border-radius:8px;padding:14px;margin-bottom:12px;background:#fffdf8">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-        <div style="display:flex;align-items:center;gap:8px">
-          <span style="font-weight:700;font-size:15px">👤 ${m.name}</span>
+    return `<div class="family-member-card" style="border:1.5px solid var(--c-border);border-radius:8px;padding:14px;margin-bottom:12px;background:#fffdf8">
+      <div class="family-member-head" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <div class="family-member-meta" style="display:flex;align-items:center;gap:8px">
+          <span class="family-member-name" style="font-weight:700;font-size:15px">👤 ${m.name}</span>
           <select class="form-select" style="width:auto;padding:4px 8px;font-size:12px" onchange="familyMembers.find(x=>x.id===${m.id}).relationship=this.value;renderFamilyUI()">
             <option value="本人" ${m.relationship==='本人'?'selected':''}>本人</option>
             <option value="配偶" ${m.relationship==='配偶'?'selected':''}>配偶</option>
@@ -3311,22 +3349,22 @@ function renderGoalAnalysis(investAssets,surplus){
 
     var existingNote=g.existing>0?'（\u5DF2\u50A8'+fmt(g.existing)+'）':'';
 
-    return '<tr>'
-      +'<td><b>'+g.name+'</b></td>'
-      +'<td><span style="font-weight:700;color:'+priorityColor[item.priority]+'">'+priorityLabel[item.priority]+'</span><br><span style="font-size:10px;color:var(--c-text-sec)">月结余份额 '+fmtFull(allocatedSurplus)+'</span></td>'
-      +'<td>'+(g.type==='short'?'\u77ED\u671F':g.type==='mid'?'\u4E2D\u671F':'\u957F\u671F')+'('+g.years+'\u5E74)</td>'
-      +'<td>\u00A5'+fmt(g.amount)+'<br><span style="font-size:11px;color:var(--c-text-sec)">\u901A\u80C0\u540E:\u00A5'+fmt(inflationAdjusted)+'</span></td>'
-      +'<td style="font-weight:600;color:'+(canAfford?'var(--c-success)':'var(--c-danger)')+'" >\u00A5'+fmtFull(required)+'/\u6708</td>'
-      +'<td>\u00A5'+fmt(pv)+'</td>'
-      +'<td>\u00A5'+fmt(effectiveExisting)+existingNote+'</td>'
-      +'<td>'+probability+'</td>'
-      +'<td>'+status+'</td>'
+    return '<tr class="goal-analysis-row">'
+      +'<td data-label="目标"><b>'+g.name+'</b></td>'
+      +'<td data-label="优先级"><span style="font-weight:700;color:'+priorityColor[item.priority]+'">'+priorityLabel[item.priority]+'</span><br><span style="font-size:10px;color:var(--c-text-sec)">月结余份额 '+fmtFull(allocatedSurplus)+'</span></td>'
+      +'<td data-label="期限">'+(g.type==='short'?'\u77ED\u671F':g.type==='mid'?'\u4E2D\u671F':'\u957F\u671F')+'('+g.years+'\u5E74)</td>'
+      +'<td data-label="目标金额">\u00A5'+fmt(g.amount)+'<br><span style="font-size:11px;color:var(--c-text-sec)">\u901A\u80C0\u540E:\u00A5'+fmt(inflationAdjusted)+'</span></td>'
+      +'<td data-label="所需月投" style="font-weight:600;color:'+(canAfford?'var(--c-success)':'var(--c-danger)')+'" >\u00A5'+fmtFull(required)+'/\u6708</td>'
+      +'<td data-label="现值需求">\u00A5'+fmt(pv)+'</td>'
+      +'<td data-label="可用本金">\u00A5'+fmt(effectiveExisting)+existingNote+'</td>'
+      +'<td data-label="达成概率">'+probability+'</td>'
+      +'<td data-label="状态">'+status+'</td>'
       +'</tr>';
   });
 
   var headerRow='';
   if(investAssets>0){
-    headerRow='<tr style="background:#fffbeb">'
+    headerRow='<tr class="goal-allocation-note" style="background:#fffbeb">'
       +'<td colspan="9" style="padding:8px 12px;font-size:12px;color:var(--c-accent);font-weight:600">'
       +'\uD83D\uDCB0 \u60A8\u5F53\u524D\u5171\u6709\u6295\u8D44\u8D44\u4EA7 \u00A5'+fmt(investAssets)
       +'，已按目标优先级分配：高优先权重3、中优先权重2、低优先权重1；同级目标平均分配。'
