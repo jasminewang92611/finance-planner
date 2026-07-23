@@ -8,32 +8,37 @@
 <style>
 /* ==================== 全局重置与变量 ==================== */
 :root{
-  --c-primary:#1a365d;
-  --c-primary-light:#2c5282;
-  --c-accent:#c9a84c;
-  --c-accent-light:#e6cc6e;
-  --c-bg:#f0f2f5;
-  --c-card:#ffffff;
-  --c-text:#1a202c;
-  --c-text-sec:#718096;
-  --c-border:#e2e8f0;
-  --c-success:#2f855a;
-  --c-success-bg:#f0fff4;
-  --c-warning:#d69e2e;
-  --c-warning-bg:#fffbeb;
-  --c-danger:#c53030;
-  --c-danger-bg:#fff5f5;
-  --c-info:#3182ce;
-  --radius:12px;
-  --shadow:0 1px 3px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04);
-  --shadow-lg:0 10px 25px rgba(0,0,0,.08),0 4px 10px rgba(0,0,0,.04);
+  --c-primary:#7b252b;
+  --c-primary-light:#a13d3f;
+  --c-accent:#ad8848;
+  --c-accent-light:#d2b36f;
+  --c-bg:#f3eee5;
+  --c-card:#fffdf8;
+  --c-text:#2d2925;
+  --c-text-sec:#756b61;
+  --c-border:#ddd2c2;
+  --c-success:#3f7059;
+  --c-success-bg:#edf4ee;
+  --c-warning:#b4772d;
+  --c-warning-bg:#fbf2df;
+  --c-danger:#a83232;
+  --c-danger-bg:#faece9;
+  --c-info:#385e68;
+  --c-info-bg:#eaf1f0;
+  --radius:8px;
+  --shadow:0 2px 8px rgba(71,48,34,.07),0 1px 2px rgba(71,48,34,.05);
+  --shadow-lg:0 14px 32px rgba(71,48,34,.12),0 5px 12px rgba(71,48,34,.07);
   --transition:.25s cubic-bezier(.4,0,.2,1);
 }
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
 html{font-size:15px}
 body{
-  font-family:'-apple-system','Segoe UI','Microsoft YaHei','PingFang SC',sans-serif;
-  background:var(--c-bg);
+  font-family:'PingFang SC','Microsoft YaHei','Noto Sans CJK SC',sans-serif;
+  background-color:var(--c-bg);
+  background-image:
+    radial-gradient(circle at 12% 18%,rgba(173,136,72,.07) 0 1px,transparent 1.5px),
+    radial-gradient(circle at 84% 72%,rgba(123,37,43,.045) 0 1px,transparent 1.5px);
+  background-size:24px 24px,32px 32px;
   color:var(--c-text);
   line-height:1.6;
   -webkit-font-smoothing:antialiased;
@@ -41,29 +46,37 @@ body{
 
 /* ==================== 顶部头部 ==================== */
 .header{
-  background:linear-gradient(135deg,var(--c-primary) 0%,var(--c-primary-light) 100%);
+  background:
+    linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px),
+    linear-gradient(135deg,#5d171d 0%,var(--c-primary) 52%,#8d3032 100%);
+  background-size:24px 100%,auto;
   color:#fff;
   padding:16px 32px;
   display:flex;
   align-items:center;
   justify-content:space-between;
   position:sticky;top:0;z-index:100;
-  box-shadow:0 2px 8px rgba(0,0,0,.12);
+  box-shadow:0 3px 12px rgba(74,23,26,.22);
+  border-bottom:2px solid var(--c-accent);
 }
 .header-left{display:flex;align-items:center;gap:12px}
 .header-logo{
   width:40px;height:40px;
-  background:var(--c-accent);
-  border-radius:10px;
+  background:#f1dfb3;
+  border:1px solid #d3ae63;
+  border-radius:4px;
   display:flex;align-items:center;justify-content:center;
   font-size:20px;font-weight:700;
-  color:var(--c-primary);
+  color:#7b252b;
+  font-family:'STKaiti','KaiTi',serif;
+  box-shadow:inset 0 0 0 3px rgba(123,37,43,.08);
 }
-.header-title{font-size:18px;font-weight:700;letter-spacing:.5px}
+.header-title{font-size:18px;font-weight:700;letter-spacing:1.5px;font-family:'STSong','SimSun',serif}
 .header-sub{font-size:12px;opacity:.7;margin-top:2px}
 .header-right{display:flex;gap:8px;align-items:center}
 .header-badge{
-  background:rgba(255,255,255,.15);
+  background:rgba(241,223,179,.16);
+  border:1px solid rgba(241,223,179,.32);
   padding:4px 12px;border-radius:20px;
   font-size:12px;
 }
@@ -74,7 +87,7 @@ body{
   position:fixed;left:16px;right:16px;top:78px;z-index:1000;
   max-width:560px;margin:0 auto;
   padding:13px 42px 13px 14px;
-  background:rgba(26,54,93,.97);color:#fff;
+  background:rgba(93,23,29,.97);color:#fff;
   border-radius:12px;box-shadow:var(--shadow-lg);
   font-size:13px;line-height:1.55;
 }
@@ -91,7 +104,7 @@ body{
 /* ---- 左侧导航 ---- */
 .sidebar{
   width:200px;
-  background:var(--c-card);
+  background:rgba(255,253,248,.94);
   border-right:1px solid var(--c-border);
   padding:20px 0;
   flex-shrink:0;
@@ -110,7 +123,7 @@ body{
 }
 .nav-step:hover{background:var(--c-bg);color:var(--c-text)}
 .nav-step.active{
-  background:linear(90deg,var(--c-bg),transparent);
+  background:linear-gradient(90deg,rgba(123,37,43,.10),rgba(173,136,72,.035),transparent);
   border-left-color:var(--c-accent);
   color:var(--c-primary);
   font-weight:600;
@@ -123,7 +136,7 @@ body{
   font-size:12px;font-weight:700;
   flex-shrink:0;transition:var(--transition);
 }
-.nav-step.active .nav-num{background:var(--c-accent);color:var(--c-primary)}
+.nav-step.active .nav-num{background:var(--c-primary);color:#f8e9c4;box-shadow:inset 0 0 0 1px rgba(248,233,196,.35)}
 .nav-step.done .nav-num{background:var(--c-success);color:#fff}
 
 /* ---- 主内容区 ---- */
@@ -142,6 +155,7 @@ body{
   background:var(--c-card);
   border-radius:var(--radius);
   box-shadow:var(--shadow);
+  border:1px solid rgba(173,136,72,.18);
   margin-bottom:20px;
   overflow:hidden;
 }
@@ -149,8 +163,11 @@ body{
   padding:16px 24px;
   border-bottom:1px solid var(--c-border);
   display:flex;align-items:center;justify-content:space-between;
+  background:linear-gradient(90deg,rgba(123,37,43,.035),rgba(173,136,72,.025),transparent);
+  position:relative;
 }
-.card-title{font-size:16px;font-weight:700;color:var(--c-primary)}
+.card-header::before{content:"";position:absolute;left:0;top:13px;bottom:13px;width:3px;background:var(--c-accent);border-radius:0 2px 2px 0}
+.card-title{font-size:16px;font-weight:700;color:var(--c-primary);font-family:'STSong','SimSun','Microsoft YaHei',serif;letter-spacing:.4px}
 .card-icon{font-size:18px;margin-right:8px}
 .card-body{padding:20px 24px}
 
@@ -167,16 +184,16 @@ body{
   border-radius:8px;
   font-size:14px;
   color:var(--c-text);
-  background:#fff;
+  background:#fffefb;
   transition:var(--transition);
   outline:none;
   width:100%;
 }
 .form-input:focus,.form-select:focus{
   border-color:var(--c-accent);
-  box-shadow:0 0 0 3px rgba(201,168,76,.15);
+  box-shadow:0 0 0 3px rgba(173,136,72,.14);
 }
-.form-input::placeholder{color:#cbd5e0}
+.form-input::placeholder{color:#b9afa2}
 .form-hint{font-size:11px;color:var(--c-text-sec)}
 .form-suffix{display:flex;align-items:center;gap:6px}
 .form-suffix .form-input{flex:1}
@@ -198,8 +215,8 @@ body{
   transition:var(--transition);
   text-align:center;
 }
-.risk-card:hover{border-color:var(--c-accent-light);background:#fffdf5}
-.risk-card.selected{border-color:var(--c-accent);background:#fffdf5}
+.risk-card:hover{border-color:var(--c-accent-light);background:#fcf6e9}
+.risk-card.selected{border-color:var(--c-primary);background:linear-gradient(145deg,#fffaf0,#f8eddb);box-shadow:inset 0 0 0 1px rgba(173,136,72,.24)}
 .risk-icon{font-size:24px;margin-bottom:8px}
 .risk-name{font-size:14px;font-weight:600}
 .risk-desc{font-size:11px;color:var(--c-text-sec);margin-top:4px}
@@ -213,6 +230,8 @@ body{
   margin-bottom:8px;
 }
 .line-item .form-input{padding:7px 10px;font-size:13px}
+#expenseList .line-item{grid-template-columns:minmax(150px,1.15fr) 130px 142px 32px}
+.expense-retirement{font-size:12px!important}
 .btn-remove{
   width:28px;height:28px;
   border:none;background:var(--c-danger-bg);
@@ -244,9 +263,9 @@ body{
   cursor:pointer;transition:var(--transition);
   display:inline-flex;align-items:center;gap:6px;
 }
-.btn-primary{background:var(--c-primary);color:#fff}
+.btn-primary{background:linear-gradient(135deg,#6f1f25,var(--c-primary-light));color:#fff;border:1px solid rgba(95,20,25,.3)}
 .btn-primary:hover{background:var(--c-primary-light);transform:translateY(-1px);box-shadow:var(--shadow-lg)}
-.btn-accent{background:var(--c-accent);color:var(--c-primary)}
+.btn-accent{background:linear-gradient(135deg,#9d773b,#c29c55);color:#fffdf5}
 .btn-accent:hover{background:var(--c-accent-light);transform:translateY(-1px)}
 .btn-ghost{background:transparent;color:var(--c-text-sec);border:1.5px solid var(--c-border)}
 .btn-ghost:hover{border-color:var(--c-primary);color:var(--c-primary)}
@@ -254,9 +273,13 @@ body{
 
 /* ==================== 汇总栏 ==================== */
 .summary-bar{
-  background:var(--c-primary);
+  background:
+    linear-gradient(90deg,rgba(255,255,255,.04) 1px,transparent 1px),
+    linear-gradient(135deg,#632027,var(--c-primary) 58%,#963437);
+  background-size:28px 100%,auto;
   color:#fff;
   border-radius:var(--radius);
+  border-top:2px solid var(--c-accent);
   padding:14px 24px;
   display:flex;
   justify-content:space-around;
@@ -266,8 +289,8 @@ body{
 .summary-item{text-align:center}
 .summary-label{font-size:11px;opacity:.7}
 .summary-value{font-size:18px;font-weight:700;margin-top:2px}
-.summary-value.positive{color:#9ae6b4}
-.summary-value.negative{color:#fed7d7}
+.summary-value.positive{color:#c5dec9}
+.summary-value.negative{color:#ffd0c9}
 
 /* ==================== 财务健康诊断 ==================== */
 .health-score-wrap{
@@ -396,7 +419,7 @@ body{
   border-bottom:2px solid var(--c-border);
 }
 .alloc-table td{padding:8px 12px;border-bottom:1px solid var(--c-border)}
-.alloc-table tr:hover td{background:#fffdf5}
+.alloc-table tr:hover td{background:#fcf6e9}
 .alloc-bar{
   height:6px;border-radius:3px;
   background:var(--c-border);
@@ -484,6 +507,7 @@ body{
   .form-input,.form-select{padding:10px 12px;font-size:16px}
   .goal-card .form-input,.goal-card .form-select{font-size:14px;padding:8px 10px}
   .line-item{grid-template-columns:0.9fr 1.1fr 28px;gap:6px}
+  #expenseList .line-item{grid-template-columns:minmax(120px,1fr) minmax(100px,.8fr) minmax(126px,.75fr) 28px}
   #assetList .line-item{grid-template-columns:minmax(0,1.35fr) minmax(88px,.65fr) 28px}
   #assetList .form-suffix{gap:3px}
   #assetList .form-unit{font-size:11px;padding-left:5px;padding-right:5px}
@@ -521,6 +545,9 @@ body{
   .risk-card{padding:12px}
   .goal-card{grid-template-columns:1fr 1fr}
   .line-item{grid-template-columns:0.85fr 1.15fr 28px}
+  #expenseList .line-item{grid-template-columns:1fr 1fr 28px}
+  #expenseList .expense-retirement{grid-column:1 / 3}
+  #expenseList .btn-remove{grid-column:3;grid-row:1}
   #assetList .line-item{grid-template-columns:minmax(0,1.3fr) minmax(84px,.7fr) 28px}
   .summary-bar{flex-direction:column;text-align:center}
 }
@@ -548,16 +575,52 @@ body{
 
 /* ==================== 打印样式 ==================== */
 @media print{
-  .sidebar,.btn-row,.nav-badge,.toast,.btn-add,.btn-remove,button{display:none!important}
-  .main{margin-left:0!important;padding:0!important;width:100%!important}
-  .step-content{display:block!important;opacity:1!important;position:static!important}
-  .step-content:not(.active){display:none!important}
-  .card{box-shadow:none!important;border:1px solid #ddd!important;break-inside:avoid;margin-bottom:12px!important}
-  .card-header{background:#f5f5f5!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-  .summary-bar{-webkit-print-color-adjust:exact;print-color-adjust:exact}
-  canvas{max-width:100%!important;height:auto!important}
-  body{font-size:12px;color:#000}
-  @page{margin:12mm}
+  html,body{background:#fff!important;background-image:none!important}
+  .header,.sidebar,.btn-row,.nav-badge,.toast,.btn-add,.btn-remove,button,
+  .mobile-nav-overlay,.mobile-nav-panel,#step6>.card[onclick]{display:none!important}
+  .layout{display:block!important;min-height:0!important}
+  .main{margin:0!important;padding:0!important;width:100%!important;max-width:none!important;overflow:visible!important}
+  .step-content{display:none!important}
+  #step6{display:block!important;opacity:1!important;position:static!important;animation:none!important}
+  #reportHeader{display:block!important;margin-bottom:8px!important;padding:14px 18px!important;break-after:avoid-page}
+  #step6 .card{
+    box-shadow:none!important;
+    border:1px solid #d8d0c5!important;
+    break-inside:auto!important;
+    page-break-inside:auto!important;
+    overflow:visible!important;
+    margin-bottom:8px!important;
+  }
+  #step6 .card-header{
+    background:#f6f1e9!important;
+    padding:9px 14px!important;
+    break-after:avoid-page;
+    -webkit-print-color-adjust:exact;print-color-adjust:exact;
+  }
+  #step6 .card-body{padding:10px 14px!important;overflow:visible!important}
+  #step6 .card-title{font-size:14px!important}
+  .summary-bar,.metric-row,.chart-wrap,.chart-wrap-lg,.radar-layout{
+    break-inside:avoid-page!important;
+    page-break-inside:avoid!important;
+    -webkit-print-color-adjust:exact;print-color-adjust:exact;
+  }
+  .summary-bar{margin-bottom:8px!important;padding:9px 14px!important}
+  .metric-row{gap:6px!important;margin-bottom:8px!important}
+  .metric-card{padding:9px 11px!important}
+  .chart-wrap{height:210px!important}
+  .chart-wrap-lg{height:245px!important}
+  .radar-layout .chart-wrap{height:225px!important}
+  .alloc-table{font-size:10px!important}
+  .alloc-table thead{display:table-header-group}
+  .alloc-table tr{break-inside:avoid-page;page-break-inside:avoid}
+  .alloc-table th,.alloc-table td{padding:5px 7px!important}
+  #comprehensiveReview .action-plan-item{padding:6px 0!important;gap:7px!important;grid-template-columns:25px minmax(0,1fr)!important}
+  #comprehensiveReview .action-plan-num{width:22px!important;height:22px!important;font-size:10px!important}
+  #comprehensiveReview .action-plan-title{margin-bottom:2px!important;gap:5px!important}
+  #comprehensiveReview .action-plan-detail{font-size:9px!important;line-height:1.35!important}
+  canvas{max-width:100%!important}
+  body{font-size:10.5px!important;color:#000}
+  @page{size:A4 portrait;margin:9mm 10mm}
 }
 </style>
 </head>
@@ -566,10 +629,10 @@ body{
 <!-- ==================== 顶部头部 ==================== -->
 <div class="header">
   <div class="header-left">
-    <div class="header-logo">¥</div>
+    <div class="header-logo">财</div>
     <div>
       <div class="header-title">财务诊断与规划Agent</div>
-      <div class="header-sub">智能财务分析 · 全天候资产配置 · 人生规划</div>
+      <div class="header-sub">家业有序 · 守正致远 · 智慧规划</div>
     </div>
   </div>
   <div class="header-right">
@@ -667,6 +730,17 @@ body{
                   <div class="risk-desc">追求高增长<br>可接受年化 5-8% 波动</div>
                 </div>
               </div>
+            </div>
+          </div>
+          <div style="margin-top:16px;padding:14px 16px;background:#f8f1e5;border:1px solid #dfcfb4;border-radius:8px">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap">
+              <div style="flex:1;min-width:240px">
+                <div style="font-size:13px;font-weight:700;color:var(--c-primary);margin-bottom:6px">🔒 客户财务数据安全说明</div>
+                <div style="font-size:11px;line-height:1.7;color:var(--c-text-sec)">
+                  录入的姓名、收支、资产、负债、保单及目标资料仅自动保存在当前设备的浏览器本地存储中，本工具不会主动把这些财务字段上传到服务器。页面会联网加载图表组件，组件服务商可能获得常规网络请求信息，但不会由本工具向其提交客户填写的财务数据。使用公共或他人设备时，请在完成后清除本机资料；打印或另存的报告文件由使用者自行保管。
+                </div>
+              </div>
+              <button type="button" class="btn btn-ghost" style="font-size:12px;white-space:nowrap;color:var(--c-danger);border-color:var(--c-danger)" onclick="clearAllClientData()">清除本机客户资料</button>
             </div>
           </div>
         </div>
@@ -1008,7 +1082,8 @@ body{
         </div>
         <div class="card-body">
           <div style="font-size:12px;color:var(--c-text-sec);margin-bottom:12px">
-            💡 期限分类：短期（1-3年）· 中期（3-10年）· 长期（10年以上）
+            💡 期限分类：短期（1-3年）· 中期（3-10年）· 长期（10年以上）<br>
+            ⚖ 目标优先级默认均为“中优先”。发生资金冲突时，系统按高3、中2、低1的权重分配可投资本金与月结余，同一优先级平均分配。
           </div>
           <div id="goalList">
             <!-- 动态生成 -->
@@ -1026,7 +1101,7 @@ body{
     <div class="step-content" id="step6">
 
       <!-- 报告头部：客户信息 -->
-      <div id="reportHeader" style="background:linear-gradient(135deg,var(--c-primary) 0%,#2a4a7f 100%);color:#fff;border-radius:12px;padding:20px 24px;margin-bottom:16px;display:none">
+      <div id="reportHeader" style="background:linear-gradient(135deg,#5d171d 0%,var(--c-primary) 58%,#963437 100%);color:#fff;border-radius:8px;border-top:2px solid var(--c-accent);padding:20px 24px;margin-bottom:16px;display:none">
         <div style="display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:12px">
           <div>
             <div style="font-size:12px;opacity:0.8;margin-bottom:4px">理财规划报告</div>
@@ -1078,9 +1153,9 @@ body{
           <div class="radar-layout">
             <div class="chart-wrap"><canvas id="radarChart"></canvas></div>
             <div class="radar-formulas">
-              <div class="radar-formula" style="background:#f0fff4"><b style="color:var(--c-success)">财务安全</b>达标储蓄率 + 完善保障 + 合理保费</div>
-              <div class="radar-formula" style="background:#eff6ff"><b style="color:var(--c-primary)">偿债安全</b>充足流动性 + 低月供压力 + 高清偿率</div>
-              <div class="radar-formula" style="background:#fffbeb"><b style="color:var(--c-accent)">财务自由</b>合理资产配置 + 持续被动收入</div>
+              <div class="radar-formula" style="background:#edf4ee"><b style="color:var(--c-success)">财务安全</b>达标储蓄率 + 完善保障 + 合理保费</div>
+              <div class="radar-formula" style="background:#eaf1f0"><b style="color:var(--c-info)">偿债安全</b>充足流动性 + 低月供压力 + 高清偿率</div>
+              <div class="radar-formula" style="background:#fbf2df"><b style="color:var(--c-accent)">财务自由</b>合理资产配置 + 持续被动收入</div>
             </div>
           </div>
           <div id="radarDetailTable" style="margin-top:16px"></div>
@@ -1122,7 +1197,7 @@ body{
         <div class="card-body">
           <div class="chart-wrap-lg"><canvas id="roiChart"></canvas></div>
           <div id="strawHatNote" style="margin-top:10px;font-size:11px;color:var(--c-text-sec);padding:8px 12px;background:var(--c-bg);border-radius:6px">
-            💡 <b>草帽图说明：</b>退休消耗期会剔除育儿/赡养及保障型保险支出，并按 3% 年通胀率计算退休后的生活开销。
+            💡 <b>草帽图说明：</b>退休消耗期会按客户对每笔支出选择的“退休后是否延续”进行计算，并按 3% 年通胀率推算退休后的生活开销。
           </div>
         </div>
       </div>
@@ -1135,7 +1210,7 @@ body{
         <div class="card-body">
           <table class="alloc-table" id="goalTable">
             <thead>
-              <tr><th>目标</th><th>期限</th><th>目标金额</th><th>所需月投</th><th>现值需求</th><th>可用本金</th><th>达成概率</th><th>状态</th></tr>
+              <tr><th>目标</th><th>优先级</th><th>期限</th><th>目标金额</th><th>所需月投</th><th>现值需求</th><th>可用本金</th><th>达成概率</th><th>状态</th></tr>
             </thead>
             <tbody id="goalTableBody"></tbody>
           </table>
@@ -1154,7 +1229,7 @@ body{
       </div>
 
       <!-- 投资理念跳转提示 -->
-      <div class="card" style="background:linear-gradient(135deg,#fffbeb 0%,#fffdf5 100%);border:2px dashed var(--c-accent);cursor:pointer" onclick="goStep(7)">
+      <div class="card" style="background:linear-gradient(135deg,#fbf2df 0%,#fffaf0 100%);border:1px solid var(--c-accent);cursor:pointer" onclick="goStep(7)">
         <div class="card-body" style="text-align:center;padding:32px 24px">
           <div style="font-size:32px;margin-bottom:10px">🌍</div>
           <div style="font-size:17px;font-weight:700;color:var(--c-primary);margin-bottom:4px">全天候投资理念与再平衡策略</div>
@@ -1168,12 +1243,13 @@ body{
         <span style="font-size:11px;color:var(--c-text-sec);line-height:1.6">
           ⚠ 免责声明：本报告由AI Agent自动生成，所有分析结果及建议仅供参考，不构成任何投资、保险或法律建议。
           金融市场存在风险，过往表现不代表未来收益。请您在做出任何财务决策前，咨询持牌专业人士。
+          <br>🔒 数据说明：客户录入资料仅保存在当前设备的浏览器本地存储中；打印或另存后的报告文件请由使用者妥善保管。
         </span>
       </div>
 
       <div class="btn-row">
         <button class="btn btn-ghost" onclick="goStep(5)">← 修改规划</button>
-        <button class="btn btn-ghost" onclick="window.print()">保存报告</button>
+        <button class="btn btn-ghost" onclick="printReport()">保存报告</button>
         <button class="btn btn-accent" onclick="generateReport()">🔄 重新分析</button>
       </div>
     </div>
@@ -1358,10 +1434,10 @@ const Engine = {
   allWeatherAllocation(age,risk){
     // 区间定义 [min, max]
     const ranges={
-      '股票(权益类)':{min:30,max:40,return:9,horizon:'长期(10年+)',color:'#3182ce'},
-      '大宗商品':{min:10,max:20,return:6,horizon:'中长期(5年+)',color:'#ed8936'},
-      '现金/短债':{min:10,max:20,return:2,horizon:'短期(1年内)',color:'#69c0ff'},
-      '长债':{min:20,max:40,return:4,horizon:'中长期(3-10年)',color:'#63b3ed'}
+      '股票(权益类)':{min:30,max:40,return:9,horizon:'长期(10年+)',color:'#7b252b'},
+      '大宗商品':{min:10,max:20,return:6,horizon:'中长期(5年+)',color:'#ad8848'},
+      '现金/短债':{min:10,max:20,return:2,horizon:'短期(1年内)',color:'#6f8f88'},
+      '长债':{min:20,max:40,return:4,horizon:'中长期(3-10年)',color:'#385e68'}
     };
 
     // 离散5%递进配置表（所有比例均为5%整数倍，总和100%）
@@ -1494,7 +1570,31 @@ function setupExpenseCategories(){
     Array.from(select.options).forEach(function(option){
       if(EXPENSE_META[option.value]) option.textContent=EXPENSE_META[option.value].label;
     });
+    select.setAttribute('onchange','handleExpenseCategoryChange(this)');
+    ensureRetirementChoice(select.closest('.line-item'));
   });
+}
+
+function retirementChoiceHTML(value){
+  return `<select class="form-input expense-retirement" aria-label="退休后是否延续" onchange="calcExpense();queueAutoSave()">
+    <option value="continue" ${value==='continue'?'selected':''}>退休后延续</option>
+    <option value="exclude" ${value==='exclude'?'selected':''}>退休后不延续</option>
+  </select>`;
+}
+function ensureRetirementChoice(item,value){
+  if(!item||item.querySelector('.expense-retirement')) return;
+  const category=item.querySelector('.expense-cat')?.value||'daily';
+  const defaultValue=value||EXPENSE_META[category]?.retirement||'continue';
+  const removeButton=item.querySelector('.btn-remove');
+  if(removeButton) removeButton.insertAdjacentHTML('beforebegin',retirementChoiceHTML(defaultValue));
+}
+function handleExpenseCategoryChange(select){
+  const item=select.closest('.line-item');
+  ensureRetirementChoice(item);
+  const choice=item.querySelector('.expense-retirement');
+  if(choice) choice.value=EXPENSE_META[select.value]?.retirement||'continue';
+  calcExpense();
+  queueAutoSave();
 }
 
 function expenseOptionsHTML(selected){
@@ -1525,7 +1625,8 @@ function isRaisingExpenseItem(item){
   return !!getExpenseMeta(item).meta.raising;
 }
 function isRetirementExcludedExpenseItem(item){
-  return getExpenseMeta(item).meta.retirement==='exclude';
+  const customerChoice=item.querySelector('.expense-retirement')?.value;
+  return customerChoice?customerChoice==='exclude':getExpenseMeta(item).meta.retirement==='exclude';
 }
 
 function isInsuranceExpenseName(name){
@@ -1603,6 +1704,21 @@ function selectRisk(el){
   queueAutoSave();
 }
 
+function clearAllClientData(){
+  if(!window.confirm('确定清除当前设备中保存的全部客户资料吗？清除后无法恢复。')) return;
+  try{ localStorage.removeItem('financePlannerData'); }catch(e){}
+  window.location.reload();
+}
+
+function printReport(){
+  generateReport();
+  if(charts.radar) charts.radar.update('none');
+  if(charts.roi) charts.roi.update('none');
+  requestAnimationFrame(function(){
+    requestAnimationFrame(function(){window.print();});
+  });
+}
+
 function showToast(msg){
   const t=document.getElementById('toast');
   t.textContent=msg;
@@ -1640,13 +1756,14 @@ function addLineItem(listId){
   const calcFn=isIncome?'calcIncome()':'calcExpense()';
   const nameField=isIncome
     ?'<input class="form-input" placeholder="项目名称" oninput="'+calcFn+'">'
-    :'<select class="form-input expense-cat" onchange="'+calcFn+'">'+expenseOptionsHTML('other_continue')+'</select>';
+    :'<select class="form-input expense-cat" onchange="handleExpenseCategoryChange(this)">'+expenseOptionsHTML('other_continue')+'</select>';
   item.innerHTML=`
     ${nameField}
     <div class="form-suffix">
       <input class="form-input" type="number" min="0" placeholder="金额" value="0" oninput="if(this.value<0)this.value=0;${calcFn}">
       <span class="form-unit">元/月</span>
     </div>
+    ${isIncome?'':retirementChoiceHTML('continue')}
     <button class="btn-remove" onclick="removeLineItem(this);${calcFn}">×</button>
   `;
   list.appendChild(item);
@@ -1794,9 +1911,9 @@ function fmtFull(n){
    人生规划目标管理
    ==================================================================== */
 let goals=[
-  {name:'购车',type:'short',years:2,amount:150000,existing:0},
-  {name:'子女教育基金',type:'mid',years:8,amount:800000,existing:50000},
-  {name:'退休储备',type:'long',years:25,amount:5000000,existing:350000}
+  {name:'购车',type:'short',priority:'mid',years:2,amount:150000,existing:0},
+  {name:'子女教育基金',type:'mid',priority:'mid',years:8,amount:800000,existing:50000},
+  {name:'退休储备',type:'long',priority:'mid',years:25,amount:5000000,existing:350000}
 ];
 
 function renderGoals(){
@@ -1823,6 +1940,14 @@ function renderGoals(){
       +'<option value="short" '+(g.type==='short'?'selected':'')+'>短期(1-3年)</option>'
       +'<option value="mid" '+(g.type==='mid'?'selected':'')+'>中期(3-10年)</option>'
       +'<option value="long" '+(g.type==='long'?'selected':'')+'>长期(10年+)</option>'
+      +'</select>'
+      +'</div>'
+      +'<div class="form-group">'
+      +'<label class="form-label">目标优先级</label>'
+      +'<select class="form-select" onchange="goals['+i+'].priority=this.value;queueAutoSave()">'
+      +'<option value="high" '+(g.priority==='high'?'selected':'')+'>高优先</option>'
+      +'<option value="mid" '+((g.priority||'mid')==='mid'?'selected':'')+'>中优先（默认）</option>'
+      +'<option value="low" '+(g.priority==='low'?'selected':'')+'>低优先</option>'
       +'</select>'
       +'</div>'
       +'<div class="form-group">'
@@ -1856,7 +1981,7 @@ function renderGoals(){
 }
 
 function addGoalItem(){
-  goals.push({name:'新目标',type:'mid',years:5,amount:100000,existing:0});
+  goals.push({name:'新目标',type:'mid',priority:'mid',years:5,amount:100000,existing:0});
   renderGoals();
   queueAutoSave();
 }
@@ -2101,7 +2226,7 @@ function renderFamilyUI(){
     const isSelf=m.relationship==='本人';
     const isSenior=m.relationship==='父母'||m.age>=55;
     const isChild=m.relationship==='子女'&&m.age<18;
-    return `<div style="border:1.5px solid var(--c-border);border-radius:10px;padding:14px;margin-bottom:12px;background:#fff">
+    return `<div style="border:1.5px solid var(--c-border);border-radius:8px;padding:14px;margin-bottom:12px;background:#fffdf8">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
         <div style="display:flex;align-items:center;gap:8px">
           <span style="font-weight:700;font-size:15px">👤 ${m.name}</span>
@@ -2133,7 +2258,7 @@ function renderFamilyUI(){
           </div>
         </div>`}
       </div>
-      ${isSenior?`<div style="margin-top:10px;padding:10px;background:#fffbeb;border-radius:8px;font-size:12px;line-height:1.6">
+      ${isSenior?`<div style="margin-top:10px;padding:10px;background:#fbf2df;border-radius:8px;font-size:12px;line-height:1.6">
         <div style="font-weight:700;color:var(--c-primary);margin-bottom:8px">中老年人保障资料（医保、备用金、意外与经济责任优先）</div>
         <div class="form-grid" style="grid-template-columns:1fr 1fr">
           <div class="form-group"><label class="form-label">是否有医保</label><select class="form-select" style="padding:6px 8px;font-size:12px" onchange="let fm=familyMembers.find(x=>x.id==${m.id});fm.basicMedical=this.value;analyzeInsurance()"><option value="unknown" ${m.basicMedical==='unknown'?'selected':''}>待核对</option><option value="employee" ${m.basicMedical==='employee'?'selected':''}>职工医保（单位职工/退休人员）</option><option value="resident" ${m.basicMedical==='resident'?'selected':''}>居民医保（城乡居民按年缴费）</option><option value="none" ${m.basicMedical==='none'?'selected':''}>无医保/断缴</option></select></div>
@@ -2145,7 +2270,7 @@ function renderFamilyUI(){
         </div>
         <div class="form-group" style="margin-top:8px"><label class="form-label">已有定期寿险</label><div class="form-suffix"><input class="form-input" type="number" min="0" value="${m.existingTermLife}" style="padding:6px 8px;font-size:12px" oninput="let fm=familyMembers.find(x=>x.id==${m.id});fm.existingTermLife=parseFloat(this.value)||0;analyzeInsurance()"><span class="form-unit" style="padding:6px 8px;font-size:12px">万元</span></div></div>
       </div>`:''}
-      ${m.relationship==='子女'&&!isSenior?`<div style="margin-top:10px;padding:10px 12px;background:#f0f7ff;border-radius:8px;font-size:12px">
+      ${m.relationship==='子女'&&!isSenior?`<div style="margin-top:10px;padding:10px 12px;background:#eaf1f0;border-radius:8px;font-size:12px">
         <div style="font-weight:700;color:var(--c-primary)">子女保单资料</div>
         ${isChild?`<div style="margin-top:6px;color:#b45309;font-weight:600">⚠ 定期寿险18岁以下不能购买</div>`:''}
       </div>`:''}
@@ -2321,7 +2446,7 @@ function generateReport(){
   // 雷达图
   renderRadarChart(health.category,{sr,dti,liq,ir,sv,ff,ipr:insurancePremiumRatio,is:insuranceSafety});
 
-  // ROI预测：退休后不再计入育儿/赡养及保险保费，并以3%通胀率推算老年生活开销。
+  // ROI预测：按客户对每笔支出的“退休后是否延续”选择计算，并以3%通胀率推算老年生活开销。
   let retirementExcluded=0;
   const excludedNames=[];
   document.querySelectorAll('#expenseList .line-item').forEach(item=>{
@@ -2452,7 +2577,7 @@ function renderAllWeatherPhilosophy(alloc,investAmount){
 
   box.innerHTML=`
     <!-- ====== 第一部分：理念起源 ====== -->
-    <div style="background:linear-gradient(135deg,#1a365d 0%,#2c5282 100%);color:#fff;border-radius:10px;padding:20px;margin-bottom:20px">
+    <div style="background:linear-gradient(135deg,#5d171d 0%,#7b252b 58%,#963437 100%);color:#fff;border-radius:8px;border-top:2px solid #ad8848;padding:20px;margin-bottom:20px">
       <div style="font-size:16px;font-weight:700;margin-bottom:8px">📡 全天候组合：穿越经济四季的永久配置</div>
       <div style="font-size:13px;line-height:1.8;opacity:.9">
         全天候策略源自桥水基金创始人<b>瑞·达里欧（Ray Dalio）</b>。他研究发现，经济运行如同四季交替——复苏、过热、滞涨、衰退循环往复，
@@ -2912,7 +3037,8 @@ function renderCashFlow(){
   document.querySelectorAll('#expenseList .line-item').forEach(item=>{
     const name=getExpenseMeta(item).label;
     const val=parseFloat(item.querySelector('input[type=number]')?.value)||0;
-    if(val>0){expenses.push({name,val});totalExpense+=val;}
+    const retirement=isRetirementExcludedExpenseItem(item)?'退休后不延续':'退休后延续';
+    if(val>0){expenses.push({name,val,retirement});totalExpense+=val;}
   });
 
   const surplus=totalIncome-totalExpense;
@@ -2930,7 +3056,7 @@ function renderCashFlow(){
   html+=`<tr><td colspan="4" style="background:var(--c-danger);color:#fff;font-weight:700;font-size:13px;padding:6px 12px">月度支出</td></tr>`;
   expenses.forEach(r=>{
     const pct=totalExpense>0?(r.val/totalExpense*100).toFixed(1):'0.0';
-    html+=`<tr><td style="padding-left:24px">${r.name}</td><td style="font-weight:600;color:var(--c-danger)">¥${fmt(r.val)}</td><td style="color:var(--c-text-sec)">¥${fmt(r.val*12)}</td><td>${pct}%</td></tr>`;
+    html+=`<tr><td style="padding-left:24px">${r.name}<div style="font-size:10px;color:var(--c-text-sec);margin-top:2px">${r.retirement}</div></td><td style="font-weight:600;color:var(--c-danger)">¥${fmt(r.val)}</td><td style="color:var(--c-text-sec)">¥${fmt(r.val*12)}</td><td>${pct}%</td></tr>`;
   });
   html+=`<tr style="background:var(--c-bg)"><td style="font-weight:700">支出合计</td><td style="font-weight:700;color:var(--c-danger)">¥${fmt(totalExpense)}</td><td style="font-weight:700">¥${fmt(totalExpense*12)}</td><td>100%</td></tr>`;
 
@@ -2959,16 +3085,17 @@ function renderRadarChart(category,metrics){
     type:'radar',
     data:{labels,datasets:[{
       label:'健康度(%)',data,
-      backgroundColor:'rgba(201,168,76,.2)',
-      borderColor:'rgba(201,168,76,1)',
-      pointBackgroundColor:'rgba(201,168,76,1)',
+      backgroundColor:'rgba(123,37,43,.14)',
+      borderColor:'rgba(123,37,43,1)',
+      pointBackgroundColor:'rgba(173,136,72,1)',
       borderWidth:2,pointRadius:4
     }]},
     options:{
       responsive:true,maintainAspectRatio:false,
       layout:{padding:{top:4,right:4,bottom:4,left:4}},
       scales:{r:{beginAtZero:true,max:100,ticks:{stepSize:25,font:{size:10}},
-        pointLabels:{font:{size:11,weight:'normal'},padding:4,color:'#1a365d'}}},
+        pointLabels:{font:{size:11,weight:'normal'},padding:4,color:'#5d171d'}}},
+      animation:false,
       plugins:{legend:{display:false}}
     }
   });
@@ -3095,11 +3222,11 @@ function renderROIChart(principal,monthlyContribution,workYears,currentAge,retir
   charts.roi=new Chart(document.getElementById('roiChart'),{
     type:'line',
     data:{labels,datasets:[
-      {label:'资产积累（3.5%/年）',data:growth,borderColor:'#c9a84c',backgroundColor:'rgba(201,168,76,.12)',fill:true,borderWidth:2.5,pointRadius:0},
-      {label:'退休后资产提款',data:decumulation,borderColor:'#e53e3e',backgroundColor:'rgba(229,62,62,.08)',fill:false,borderWidth:2,borderDash:[6,4],pointRadius:0}
+      {label:'资产积累（3.5%/年）',data:growth,borderColor:'#ad8848',backgroundColor:'rgba(173,136,72,.14)',fill:true,borderWidth:2.5,pointRadius:0},
+      {label:'退休后资产提款',data:decumulation,borderColor:'#a83232',backgroundColor:'rgba(168,50,50,.08)',fill:false,borderWidth:2,borderDash:[6,4],pointRadius:0}
     ]},
     options:{
-      responsive:true,maintainAspectRatio:false,
+      responsive:true,maintainAspectRatio:false,animation:false,
       plugins:{
         legend:{position:'top',labels:{font:{size:12}}},
         tooltip:{callbacks:{label:(ctx)=>ctx.dataset.label+': ¥'+fmt(ctx.parsed.y||0)}}
@@ -3131,7 +3258,7 @@ function renderROIChart(principal,monthlyContribution,workYears,currentAge,retir
             var y=point.y;
             var label='\u00A5'+fmt(a.value);
             var isAccum=a.index<=workYears;
-            ctx.fillStyle=isAccum?'rgba(201,168,76,.9)':'rgba(229,62,62,.85)';
+            ctx.fillStyle=isAccum?'rgba(173,136,72,.92)':'rgba(168,50,50,.86)';
             var w=ctx.measureText(label).width+10;
             ctx.fillRect(x-w/2,y-14,w,16);
             ctx.fillStyle='#fff';
@@ -3148,24 +3275,35 @@ function renderROIChart(principal,monthlyContribution,workYears,currentAge,retir
 function renderGoalAnalysis(investAssets,surplus){
   var body=document.getElementById('goalTableBody');
   var riskReturn={short:0.02,mid:0.035,long:0.065};
+  var priorityWeight={high:3,mid:2,low:1};
+  var priorityLabel={high:'高优先',mid:'中优先',low:'低优先'};
+  var priorityColor={high:'var(--c-danger)',mid:'var(--c-accent)',low:'var(--c-text-sec)'};
   var goalCount=goals.length||1;
-  // 总投资资产按目标数量均分，作为各目标可用本金基准
-  var sharedPrincipal=investAssets/goalCount;
+  var normalizedGoals=goals.map(function(g,index){
+    var priority=priorityWeight[g.priority]?g.priority:'mid';
+    return {goal:g,index:index,priority:priority,weight:priorityWeight[priority]};
+  });
+  var totalWeight=normalizedGoals.reduce(function(total,item){return total+item.weight;},0)||1;
 
-  var rows=goals.map(function(g){
+  var rows=normalizedGoals.sort(function(a,b){
+    return b.weight-a.weight||a.index-b.index;
+  }).map(function(item){
+    var g=item.goal;
+    var allocatedPrincipal=investAssets*item.weight/totalWeight;
+    var allocatedSurplus=Math.max(0,surplus)*item.weight/totalWeight;
     var rate=riskReturn[g.type]||0.05;
-    // 已储备取用户填写值和均分投资资产的较大者
-    var effectiveExisting=Math.max(g.existing||0,sharedPrincipal);
+    // 已储备取用户填写值和按优先级分配投资资产的较大者
+    var effectiveExisting=Math.max(g.existing||0,allocatedPrincipal);
     var required=Engine.requiredMonthlyContribution(g.amount,effectiveExisting,rate,g.years);
     var pv=Engine.presentValue(g.amount,rate,g.years);
-    var canAfford=surplus>=required;
+    var canAfford=allocatedSurplus>=required;
     var inflationAdjusted=Engine.inflate(g.amount,0.03,g.years);
 
     var probability;
-    if(surplus>=required*1.5) probability='>90%';
-    else if(surplus>=required*1.2) probability='75-90%';
-    else if(surplus>=required) probability='50-75%';
-    else if(surplus>=required*0.7) probability='25-50%';
+    if(allocatedSurplus>=required*1.5) probability='>90%';
+    else if(allocatedSurplus>=required*1.2) probability='75-90%';
+    else if(allocatedSurplus>=required) probability='50-75%';
+    else if(allocatedSurplus>=required*0.7) probability='25-50%';
     else probability='<25%';
 
     var status=canAfford?'<span style="color:var(--c-success);font-weight:600">\u2713 \u53EF\u8FBE\u6210</span>':
@@ -3175,6 +3313,7 @@ function renderGoalAnalysis(investAssets,surplus){
 
     return '<tr>'
       +'<td><b>'+g.name+'</b></td>'
+      +'<td><span style="font-weight:700;color:'+priorityColor[item.priority]+'">'+priorityLabel[item.priority]+'</span><br><span style="font-size:10px;color:var(--c-text-sec)">月结余份额 '+fmtFull(allocatedSurplus)+'</span></td>'
       +'<td>'+(g.type==='short'?'\u77ED\u671F':g.type==='mid'?'\u4E2D\u671F':'\u957F\u671F')+'('+g.years+'\u5E74)</td>'
       +'<td>\u00A5'+fmt(g.amount)+'<br><span style="font-size:11px;color:var(--c-text-sec)">\u901A\u80C0\u540E:\u00A5'+fmt(inflationAdjusted)+'</span></td>'
       +'<td style="font-weight:600;color:'+(canAfford?'var(--c-success)':'var(--c-danger)')+'" >\u00A5'+fmtFull(required)+'/\u6708</td>'
@@ -3190,7 +3329,7 @@ function renderGoalAnalysis(investAssets,surplus){
     headerRow='<tr style="background:#fffbeb">'
       +'<td colspan="9" style="padding:8px 12px;font-size:12px;color:var(--c-accent);font-weight:600">'
       +'\uD83D\uDCB0 \u60A8\u5F53\u524D\u5171\u6709\u6295\u8D44\u8D44\u4EA7 \u00A5'+fmt(investAssets)
-      +'\uFF0C\u6309'+goalCount+'\u4E2A\u76EE\u6807\u5747\u5206\uFF0C\u6BCF\u4E2A\u76EE\u6807\u53EF\u7528\u672C\u91D1\u00A5'+fmt(sharedPrincipal)
+      +'，已按目标优先级分配：高优先权重3、中优先权重2、低优先权重1；同级目标平均分配。'
       +'</td></tr>';
   }
 
@@ -3244,13 +3383,17 @@ function renderComprehensiveReview(health,metrics,fin){
   }
 
   var actions=[];
-  if(metrics.liq<3) actions.push('建立3-6个月紧急备用金（当前流动性仅'+l+'个月）');
-  if(metrics.is<60) actions.push('完善家庭保障配置（保险安全度'+isVal+'%），优先配置重疾险和医疗险');
-  if(metrics.sr<20) actions.push('提升储蓄率至20%以上（当前'+s+'%），建议采用\u201C先存后花\u201D策略');
-  if(metrics.dti>=50) actions.push('控制月度偿债比例（当前'+d+'%），考虑债务重组或提前还款');
-  if(metrics.ir<30) actions.push('增加投资资产配置（当前占比'+ir+'%），从低风险产品起步');
-  if(metrics.ff<15) actions.push('建立被动收入来源，逐步提升财务自由度（当前'+ff+'%）');
-  if(actions.length===0) actions.push('保持现有良好财务习惯，持续优化资产配置结构');
+  var emergencyTarget=fin.expense*3;
+  var emergencyGap=Math.max(0,emergencyTarget-fin.liquidAssets);
+  var savingTarget=Math.max(0,fin.income*0.2);
+  if(fin.surplus<=0) actions.push({level:'立即',title:'先止住月度现金流缺口',action:'逐项核对支出，先暂停非必要消费，并确定可执行的增收方案。',standard:'月结余由 ¥'+fmt(fin.surplus)+' 提升至至少 ¥0，连续保持2个月。',time:'7天内制定，30天内复盘'});
+  if(metrics.liq<3) actions.push({level:'优先',title:'补足最低应急备用金',action:'将每月结余优先转入独立的高流动性账户，暂缓非刚性长期投资。',standard:'流动资产达到3个月支出，即 ¥'+fmt(emergencyTarget)+'；当前还差约 ¥'+fmt(emergencyGap)+'。',time:'本周开始，每月检查'});
+  if(metrics.is<60) actions.push({level:'优先',title:'完成家庭保障缺口核对',action:'按家庭成员逐一核对医保、医疗险、重疾险、意外险和经济支柱定期寿险，先补基础保障，再考虑储蓄型保险。',standard:'报告中的成员保障缺口逐项确认，保险安全度由 '+isVal+'% 提升至60%以上。',time:'30天内完成核对'});
+  if(metrics.dti>=36) actions.push({level:'优先',title:'降低偿债压力',action:'列出每笔负债利率与剩余期限，优先处理高成本负债，并评估提前还款或重组。',standard:'月度偿债比例由 '+d+'% 降至36%以下。',time:'30天内形成还款顺序'});
+  if(metrics.sr<20&&fin.surplus>0) actions.push({level:'随后',title:'建立“先存后花”机制',action:'发薪后自动转入目标账户，不使用月末剩余金额作为储蓄标准。',standard:'每月储蓄达到约 ¥'+fmt(savingTarget)+'，储蓄率由 '+s+'% 提升至20%以上并保持3个月。',time:'下个发薪日开始'});
+  if(metrics.ir<30&&metrics.liq>=3&&fin.surplus>0) actions.push({level:'随后',title:'按目标配置长期投资资金',action:'保留应急金后，将可长期不用的结余按风险偏好分批投入，并设置年度再平衡。',standard:'形成书面目标比例和每月投入金额；投资资产占比由 '+ir+'% 逐步接近30%以上。',time:'60—90天内启动'});
+  if(actions.length===0) actions.push({level:'保持',title:'建立季度复盘制度',action:'核对实际收支、净资产、保险变化及目标进度，偏离计划时及时调整。',standard:'每季度完成一次数据更新，每年完成一次完整财务诊断。',time:'每季度末'});
+  actions=actions.slice(0,5);
 
   var freedomTarget=fin.expense*12/0.04;
   var freedomProgress=fin.investAssets>0?(fin.investAssets/freedomTarget*100):0;
@@ -3273,7 +3416,14 @@ function renderComprehensiveReview(health,metrics,fin){
     risksHtml='<div style="font-size:12px;color:var(--c-success)">所有维度均达标，继续保持！</div>';
   }
 
-  var actionsHtml=actions.map(function(a){return '<li>'+a+'</li>';}).join('');
+  var actionsHtml=actions.map(function(a,i){
+    var levelColor=a.level==='立即'?'var(--c-danger)':a.level==='优先'?'var(--c-warning)':a.level==='随后'?'var(--c-accent)':'var(--c-success)';
+    return '<div class="action-plan-item" style="display:grid;grid-template-columns:32px minmax(0,1fr);gap:10px;padding:12px 0;'+(i?'border-top:1px solid var(--c-border)':'')+'">'
+      +'<div class="action-plan-num" style="width:28px;height:28px;border-radius:50%;background:'+levelColor+';color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700">'+(i+1)+'</div>'
+      +'<div><div class="action-plan-title" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:5px"><b style="font-size:13px;color:var(--c-primary)">'+a.title+'</b><span style="font-size:10px;padding:2px 7px;border-radius:10px;background:'+levelColor+';color:#fff">'+a.level+'</span><span style="font-size:10px;color:var(--c-text-sec)">建议时限：'+a.time+'</span></div>'
+      +'<div class="action-plan-detail" style="font-size:12px;line-height:1.6;color:var(--c-text-sec)"><b>具体动作：</b>'+a.action+'</div>'
+      +'<div class="action-plan-detail" style="font-size:12px;line-height:1.6;color:var(--c-text-sec)"><b>完成标准：</b>'+a.standard+'</div></div></div>';
+  }).join('');
 
   var fpMsg=freedomProgress>0?'（已积累投资资产'+ia+'）':'';
   var yearsToFree=calcYearsToFreedom(fin.investAssets,fin.expense,fin.surplus);
@@ -3303,10 +3453,10 @@ function renderComprehensiveReview(health,metrics,fin){
     +risksHtml
     +'</div></div>'
     +'<div style="background:#f7fafc;border-radius:10px;padding:16px">'
-    +'<div style="font-size:14px;font-weight:700;color:var(--c-primary);margin-bottom:10px">优先行动建议</div>'
-    +'<ol style="margin:0;padding-left:20px;font-size:13px;line-height:1.8;color:var(--c-text-sec)">'
+    +'<div style="font-size:14px;font-weight:700;color:var(--c-primary)">下一步行动清单</div>'
+    +'<div style="font-size:11px;color:var(--c-text-sec);margin-top:3px;margin-bottom:8px">建议按顺序执行；每项都包含动作、完成标准与复盘时限。</div>'
     +actionsHtml
-    +'</ol></div>';
+    +'</div>';
 }
 
 /* ---- 计算达到财务自由所需年数 ----
@@ -3355,11 +3505,13 @@ function getLineItemData(listId){
   list.querySelectorAll('.line-item').forEach(function(item){
     var catSelect=item.querySelector('.asset-cat');
     var expenseSelect=item.querySelector('.expense-cat');
+    var retirementSelect=item.querySelector('.expense-retirement');
     var nameInput=item.querySelector('input:not([type=number])');
     var valInput=item.querySelector('input[type=number]');
     items.push({
       name:nameInput?nameInput.value:(expenseSelect?.selectedOptions?.[0]?.textContent||''),
       category:catSelect?catSelect.value:(expenseSelect?expenseSelect.value:''),
+      retirement:retirementSelect?retirementSelect.value:'',
       value:valInput?valInput.value:''
     });
   });
@@ -3387,7 +3539,7 @@ function loadData(){
       familyMembers=data.familyMembers.map(m=>({...m,basicMedical:m.basicMedical||'unknown',medicalReserve:m.medicalReserve||0}));
       memberIdCounter=familyMembers.length+1;
     }
-    if(data.goals) goals=data.goals;
+    if(data.goals) goals=data.goals.map(function(g){return {...g,priority:g.priority||'mid'};});
 
     restoreLineItems('incomeList',data.incomeList);
     restoreLineItems('expenseList',data.expenseList);
@@ -3419,6 +3571,7 @@ function restoreLineItems(listId,items){
     if(i<currentItems.length){
       var catSelect=currentItems[i].querySelector('.asset-cat');
       var expenseSelect=currentItems[i].querySelector('.expense-cat');
+      var retirementSelect=currentItems[i].querySelector('.expense-retirement');
       var nameInput=currentItems[i].querySelector('input:not([type=number])');
       var valInput=currentItems[i].querySelector('input[type=number]');
       if(catSelect){
@@ -3430,6 +3583,9 @@ function restoreLineItems(listId,items){
       if(expenseSelect){
         var expenseCode=EXPENSE_META[item.category]?item.category:inferExpenseCategory(item.name);
         expenseSelect.value=expenseCode;
+        ensureRetirementChoice(currentItems[i],item.retirement||EXPENSE_META[expenseCode].retirement);
+        retirementSelect=currentItems[i].querySelector('.expense-retirement');
+        if(retirementSelect) retirementSelect.value=item.retirement||EXPENSE_META[expenseCode].retirement;
       }
       if(nameInput) nameInput.value=item.name||'';
       if(valInput) valInput.value=item.value||'';
