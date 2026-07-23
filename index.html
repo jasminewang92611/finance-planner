@@ -231,7 +231,15 @@ body{
 }
 .line-item .form-input{padding:7px 10px;font-size:13px}
 #expenseList .line-item{grid-template-columns:minmax(150px,1.15fr) 130px 142px 32px}
-.expense-retirement{font-size:12px!important}
+.expense-retirement-check{
+  min-height:36px;padding:7px 9px;border:1.5px solid var(--c-border);border-radius:8px;
+  display:flex;align-items:center;gap:7px;background:#fffefb;color:var(--c-text-sec);
+  font-size:12px;cursor:pointer;transition:var(--transition);white-space:nowrap
+}
+.expense-retirement-check:has(.expense-retirement:checked){
+  border-color:var(--c-success);background:var(--c-success-bg);color:var(--c-success)
+}
+.expense-retirement{width:16px;height:16px;accent-color:var(--c-success);flex-shrink:0}
 .btn-remove{
   width:28px;height:28px;
   border:none;background:var(--c-danger-bg);
@@ -578,7 +586,7 @@ body{
   .goal-card{grid-template-columns:1fr 1fr}
   .line-item{grid-template-columns:0.85fr 1.15fr 28px}
   #expenseList .line-item{grid-template-columns:1fr 1fr 28px}
-  #expenseList .expense-retirement{grid-column:1 / 3}
+  #expenseList .expense-retirement-check{grid-column:1 / 3}
   #expenseList .btn-remove{grid-column:3;grid-row:1}
   #assetList .line-item{grid-template-columns:minmax(0,1.3fr) minmax(84px,.7fr) 28px}
   .summary-bar{flex-direction:column;text-align:center}
@@ -1614,10 +1622,11 @@ function setupExpenseCategories(){
 }
 
 function retirementChoiceHTML(value){
-  return `<select class="form-input expense-retirement" aria-label="退休后是否延续" onchange="calcExpense();queueAutoSave()">
-    <option value="continue" ${value==='continue'?'selected':''}>退休后延续</option>
-    <option value="exclude" ${value==='exclude'?'selected':''}>退休后不延续</option>
-  </select>`;
+  const isContinue=value==='continue';
+  return `<label class="expense-retirement-check">
+    <input type="checkbox" class="expense-retirement" aria-label="退休后是否延续" ${isContinue?'checked':''} onchange="syncRetirementChoice(this)">
+    <span>${isContinue?'退休后延续':'退休后不延续'}</span>
+  </label>`;
 }
 function ensureRetirementChoice(item,value){
   if(!item||item.querySelector('.expense-retirement')) return;
@@ -1630,7 +1639,17 @@ function handleExpenseCategoryChange(select){
   const item=select.closest('.line-item');
   ensureRetirementChoice(item);
   const choice=item.querySelector('.expense-retirement');
-  if(choice) choice.value=EXPENSE_META[select.value]?.retirement||'continue';
+  if(choice){
+    choice.checked=(EXPENSE_META[select.value]?.retirement||'continue')==='continue';
+    syncRetirementChoice(choice);
+    return;
+  }
+  calcExpense();
+  queueAutoSave();
+}
+function syncRetirementChoice(choice){
+  const text=choice.closest('.expense-retirement-check')?.querySelector('span');
+  if(text) text.textContent=choice.checked?'退休后延续':'退休后不延续';
   calcExpense();
   queueAutoSave();
 }
@@ -1651,7 +1670,7 @@ function inferExpenseCategory(name){
 }
 function getExpenseMeta(item){
   const select=item.querySelector('.expense-cat');
-  const name=item.querySelector('input:not([type=number])')?.value||'';
+  const name=item.querySelector('input:not([type=number]):not([type=checkbox])')?.value||'';
   const code=select?.value||(EXPENSE_META[inferExpenseCategory(name)]?inferExpenseCategory(name):'daily');
   return {code:code,meta:EXPENSE_META[code]||EXPENSE_META.daily,label:select?.selectedOptions?.[0]?.textContent||name||'未命名'};
 }
@@ -1663,8 +1682,8 @@ function isRaisingExpenseItem(item){
   return !!getExpenseMeta(item).meta.raising;
 }
 function isRetirementExcludedExpenseItem(item){
-  const customerChoice=item.querySelector('.expense-retirement')?.value;
-  return customerChoice?customerChoice==='exclude':getExpenseMeta(item).meta.retirement==='exclude';
+  const customerChoice=item.querySelector('.expense-retirement');
+  return customerChoice?!customerChoice.checked:getExpenseMeta(item).meta.retirement==='exclude';
 }
 
 function isInsuranceExpenseName(name){
@@ -3544,12 +3563,12 @@ function getLineItemData(listId){
     var catSelect=item.querySelector('.asset-cat');
     var expenseSelect=item.querySelector('.expense-cat');
     var retirementSelect=item.querySelector('.expense-retirement');
-    var nameInput=item.querySelector('input:not([type=number])');
+    var nameInput=item.querySelector('input:not([type=number]):not([type=checkbox])');
     var valInput=item.querySelector('input[type=number]');
     items.push({
       name:nameInput?nameInput.value:(expenseSelect?.selectedOptions?.[0]?.textContent||''),
       category:catSelect?catSelect.value:(expenseSelect?expenseSelect.value:''),
-      retirement:retirementSelect?retirementSelect.value:'',
+      retirement:retirementSelect?(retirementSelect.checked?'continue':'exclude'):'',
       value:valInput?valInput.value:''
     });
   });
@@ -3610,7 +3629,7 @@ function restoreLineItems(listId,items){
       var catSelect=currentItems[i].querySelector('.asset-cat');
       var expenseSelect=currentItems[i].querySelector('.expense-cat');
       var retirementSelect=currentItems[i].querySelector('.expense-retirement');
-      var nameInput=currentItems[i].querySelector('input:not([type=number])');
+      var nameInput=currentItems[i].querySelector('input:not([type=number]):not([type=checkbox])');
       var valInput=currentItems[i].querySelector('input[type=number]');
       if(catSelect){
         var catCode=item.category||'';
@@ -3623,7 +3642,11 @@ function restoreLineItems(listId,items){
         expenseSelect.value=expenseCode;
         ensureRetirementChoice(currentItems[i],item.retirement||EXPENSE_META[expenseCode].retirement);
         retirementSelect=currentItems[i].querySelector('.expense-retirement');
-        if(retirementSelect) retirementSelect.value=item.retirement||EXPENSE_META[expenseCode].retirement;
+        if(retirementSelect){
+          retirementSelect.checked=(item.retirement||EXPENSE_META[expenseCode].retirement)==='continue';
+          var retirementText=retirementSelect.closest('.expense-retirement-check')?.querySelector('span');
+          if(retirementText) retirementText.textContent=retirementSelect.checked?'退休后延续':'退休后不延续';
+        }
       }
       if(nameInput) nameInput.value=item.name||'';
       if(valInput) valInput.value=item.value||'';
