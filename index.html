@@ -1297,7 +1297,7 @@ body{
       <div class="btn-row">
         <button class="btn btn-ghost" onclick="goStep(5)">← 修改规划</button>
         <button class="btn btn-ghost" onclick="printReport()">保存报告</button>
-        <button class="btn btn-accent" onclick="generateReport()">🔄 重新分析</button>
+        <button class="btn btn-accent" onclick="syncAllFormData();generateReport()">🔄 重新分析</button>
       </div>
     </div>
 
@@ -1691,7 +1691,26 @@ function isInsuranceExpenseName(name){
   return /保险|保费/i.test(name||'');
 }
 
-function syncPrimaryMember(){
+
+/* ---- 同步所有表单数据到内存（修复：确保分析报告总是读取最新数据） ---- */
+function syncAllFormData(){
+  // 同步本人年龄/收入到 familyMembers
+  syncPrimaryMember();
+  // 同步 goals（通过遍历 DOM 确保数组与表单一致）
+  var goalCards=document.querySelectorAll('#goalList .goal-card');
+  goalCards.forEach(function(card,i){
+    if(i<goals.length){
+      var yearsInput=card.querySelector('input[type=number][min]');
+      var amountInput=card.querySelectorAll('input[type=number]')[1];
+      var nameInput=card.querySelector('input:not([type=number])');
+      if(yearsInput) goals[i].years=parseInt(yearsInput.value)||goals[i].years;
+      if(amountInput) goals[i].amount=parseFloat(amountInput.value)||0;
+      if(nameInput) goals[i].name=nameInput.value||goals[i].name;
+    }
+  });
+  // 标记报告需要刷新
+  window._reportDirty=true;
+}function syncPrimaryMember(){
   const age=parseInt(document.getElementById('clientAge')?.value)||35;
   const income=parseSum('#incomeList');
   familyMembers.forEach(function(m){
@@ -1750,7 +1769,7 @@ function goStep(n){
   document.getElementById('navBadge').textContent='步骤 '+n+' / 7';
   // 每次切换步骤自动保存
   if(n>1) saveData();
-  if(n===6) generateReport();
+  if(n===6){ syncAllFormData(); generateReport(); }
   if(n===7) renderAllWeatherPhilosophy();
   window.scrollTo({top:0,behavior:'smooth'});
 }
@@ -2379,6 +2398,9 @@ renderFamilyUI();
 function generateReport(){
   // 报告生成前再次同步本人资料，避免跳过保单页面时使用旧的年龄或收入。
   syncPrimaryMember();
+  // 清空旧报告，避免数据校验失败时残留旧数据
+  var rh=document.getElementById('reportHeader'); if(rh) rh.style.display='none';
+  var cr=document.getElementById('comprehensiveReview'); if(cr) cr.innerHTML='';
   // 收集数据
   const age=parseInt(document.getElementById('clientAge').value)||35;
   const retireAge=parseInt(document.getElementById('retireAge').value)||60;
