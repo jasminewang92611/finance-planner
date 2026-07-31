@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>财务诊断与规划Agent · 智能财务分析与资产配置助手</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <style>
 /* ==================== 全局重置与变量 ==================== */
 :root{
@@ -84,19 +85,27 @@ body{
 /* ---- 微信内置浏览器提示（仅检测到微信时显示） ---- */
 .wechat-browser-tip{
   display:none;
-  position:fixed;left:16px;right:16px;top:78px;z-index:1000;
-  max-width:560px;margin:0 auto;
-  padding:13px 42px 13px 14px;
+  position:fixed;left:14px;right:14px;top:78px;z-index:1000;
+  max-width:620px;margin:0 auto;
+  padding:22px 52px 22px 20px;
   background:rgba(93,23,29,.97);color:#fff;
-  border-radius:12px;box-shadow:var(--shadow-lg);
-  font-size:13px;line-height:1.55;
+  border:1px solid rgba(247,217,120,.45);
+  border-radius:14px;box-shadow:0 18px 46px rgba(54,13,17,.3);
+  font-size:16px;line-height:1.7;
 }
 .wechat-browser-tip.show{display:block}
-.wechat-browser-tip strong{color:#f7d978}
+.wechat-browser-tip strong{display:block;color:#f7d978;font-size:20px;line-height:1.35;margin-bottom:6px}
 .wechat-browser-tip-close{
-  position:absolute;right:10px;top:8px;border:0;background:transparent;color:#fff;
-  font-size:22px;line-height:1;cursor:pointer;padding:4px 7px;
+  position:absolute;right:12px;top:12px;border:0;background:rgba(255,255,255,.1);color:#fff;
+  width:34px;height:34px;border-radius:50%;font-size:23px;line-height:1;cursor:pointer;
 }
+.report-image-modal{display:none;position:fixed;inset:0;z-index:1200;background:rgba(24,17,14,.94);padding:18px 12px 28px;overflow:auto;text-align:center}
+.report-image-modal.show{display:block}
+.report-image-toolbar{position:sticky;top:0;z-index:1;max-width:760px;margin:0 auto 12px;padding:12px 44px 12px 14px;color:#fff;background:rgba(93,23,29,.97);border-radius:12px;box-shadow:var(--shadow-lg);font-size:14px;line-height:1.55;text-align:left}
+.report-image-toolbar strong{display:block;color:#f7d978;font-size:17px}
+.report-image-close{position:absolute;right:8px;top:8px;width:34px;height:34px;border:0;border-radius:50%;background:rgba(255,255,255,.14);color:#fff;font-size:22px;cursor:pointer}
+.report-image-preview{display:block;width:min(100%,760px);height:auto;margin:0 auto;background:#fff;box-shadow:var(--shadow-lg)}
+.report-image-loading{color:#fff;font-size:16px;padding:20vh 12px}
 
 /* ==================== 主布局 ==================== */
 .layout{display:flex;min-height:calc(100vh - 65px)}
@@ -1281,7 +1290,7 @@ body{
       </div>
 
       <!-- 投资理念跳转提示 -->
-      <div class="card" style="background:linear-gradient(135deg,#fbf2df 0%,#fffaf0 100%);border:1px solid var(--c-accent);cursor:pointer" onclick="goStep(7)">
+      <div class="card" data-html2canvas-ignore="true" style="background:linear-gradient(135deg,#fbf2df 0%,#fffaf0 100%);border:1px solid var(--c-accent);cursor:pointer" onclick="goStep(7)">
         <div class="card-body" style="text-align:center;padding:32px 24px">
           <div style="font-size:32px;margin-bottom:10px">🌍</div>
           <div style="font-size:17px;font-weight:700;color:var(--c-primary);margin-bottom:4px">全天候投资理念与再平衡策略</div>
@@ -1301,7 +1310,8 @@ body{
 
       <div class="btn-row">
         <button class="btn btn-ghost" onclick="goStep(5)">← 修改规划</button>
-        <button class="btn btn-ghost" onclick="printReport()">保存报告</button>
+        <button class="btn btn-ghost" onclick="printReport()">打印 / 保存 PDF</button>
+        <button class="btn btn-accent" onclick="saveReportAsLongImage()">保存成长图</button>
       </div>
     </div>
 
@@ -1328,8 +1338,17 @@ body{
 <div class="toast" id="toast"></div>
 <div class="wechat-browser-tip" id="wechatBrowserTip" role="status" aria-live="polite">
   <button class="wechat-browser-tip-close" type="button" aria-label="关闭提示" onclick="dismissWeChatBrowserTip()">×</button>
-  <strong>建议在浏览器打开</strong><br>
-  微信内置浏览器可能无法保存 PDF 报告。请点击右上角 <b>···</b>，选择“在浏览器打开”后再生成或保存报告。
+  <strong>建议直接跳转浏览器打开</strong>
+  使用系统浏览器填写更稳定，也更方便导出和保存完整报告。请点击右上角 <b>···</b>，选择“在浏览器打开”。如继续在微信内使用，也可以在报告页生成长图后长按保存。
+</div>
+<div class="report-image-modal" id="reportImageModal" role="dialog" aria-modal="true" aria-label="报告长图预览">
+  <div class="report-image-toolbar">
+    <button class="report-image-close" type="button" aria-label="关闭长图预览" onclick="closeReportImageModal()">×</button>
+    <strong>报告长图已生成</strong>
+    <span id="reportImageHint">请长按下方图片，选择“保存图片”。</span>
+  </div>
+  <div class="report-image-loading" id="reportImageLoading">正在生成报告长图，请稍候…</div>
+  <img class="report-image-preview" id="reportImagePreview" alt="财务分析报告长图" hidden>
 </div>
 
 <script>
@@ -1798,6 +1817,49 @@ function printReport(){
   requestAnimationFrame(function(){
     requestAnimationFrame(function(){window.print();});
   });
+}
+
+async function saveReportAsLongImage(){
+  if(typeof html2canvas!=='function'){showToast('长图组件加载失败，请检查网络后重试');return;}
+  syncAllFormData();
+  generateReport();
+  if(charts.radar) charts.radar.update('none');
+  if(charts.roi) charts.roi.update('none');
+  const modal=document.getElementById('reportImageModal');
+  const loading=document.getElementById('reportImageLoading');
+  const preview=document.getElementById('reportImagePreview');
+  const hint=document.getElementById('reportImageHint');
+  const isWeChat=/MicroMessenger/i.test(navigator.userAgent||'');
+  preview.hidden=true; preview.removeAttribute('src'); loading.style.display='block';
+  hint.textContent=isWeChat?'请长按下方图片，选择“保存图片”。':'图片会自动下载，也可以长按或右键保存。';
+  modal.classList.add('show'); document.body.style.overflow='hidden';
+  try{
+    await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+    const report=document.getElementById('step6');
+    const canvas=await html2canvas(report,{
+      backgroundColor:'#f3eee5',scale:isWeChat?1.5:Math.min(window.devicePixelRatio||1,2),useCORS:true,logging:false,
+      windowWidth:Math.max(report.scrollWidth,900),
+      onclone:function(doc){
+        doc.querySelectorAll('#step6 .btn-row,[data-html2canvas-ignore="true"]').forEach(el=>el.style.display='none');
+        const clonedStep=doc.getElementById('step6');
+        clonedStep.style.display='block';clonedStep.style.opacity='1';clonedStep.style.animation='none';
+      }
+    });
+    const imageUrl=canvas.toDataURL('image/jpeg',0.92);
+    preview.src=imageUrl;preview.hidden=false;loading.style.display='none';
+    if(!isWeChat){
+      const client=(document.getElementById('reportClientName').textContent||'客户').replace(/[\\/:*?"<>|]/g,'_');
+      const link=document.createElement('a');link.href=imageUrl;link.download=client+'的财务分析报告.jpg';link.click();
+    }
+  }catch(error){
+    console.error(error);closeReportImageModal();showToast('长图生成失败，请稍后重试或使用 PDF 导出');
+  }
+}
+
+function closeReportImageModal(){
+  const modal=document.getElementById('reportImageModal');
+  if(modal) modal.classList.remove('show');
+  document.body.style.overflow='';
 }
 
 function showToast(msg){
