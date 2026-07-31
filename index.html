@@ -287,6 +287,9 @@ body{
 .btn-ghost{background:transparent;color:var(--c-text-sec);border:1.5px solid var(--c-border)}
 .btn-ghost:hover{border-color:var(--c-primary);color:var(--c-primary)}
 .btn-row{display:flex;justify-content:space-between;margin-top:24px}
+.pdf-export-group{display:flex;align-items:center;justify-content:center;gap:8px}
+.wechat-pdf-note{display:none;max-width:220px;font-size:11px;line-height:1.45;color:var(--c-danger)}
+.wechat-browser .wechat-pdf-note{display:block}
 .report-actions{
   display:grid;gap:10px;margin:0 0 18px;padding:14px;
   background:linear-gradient(135deg,#fffaf0,#f8f0e2);
@@ -1181,7 +1184,7 @@ body{
         </div>
       </div>
 
-      <div class="report-actions">
+      <div class="report-actions" data-html2canvas-ignore="true">
         <div class="report-action">
           <button class="btn btn-primary" onclick="reanalyzeReport()">🔄 重新分析</button>
           <div class="report-action-note">修改资料后点击，立即按照最新数据重新生成报告，无需离开本页。</div>
@@ -1327,8 +1330,11 @@ body{
 
       <div class="btn-row">
         <button class="btn btn-ghost" onclick="goStep(5)">← 修改规划</button>
-        <button class="btn btn-ghost" onclick="printReport()">打印 / 保存 PDF</button>
-        <button class="btn btn-accent" onclick="saveReportAsLongImage()">保存成长图</button>
+        <button class="btn btn-accent" onclick="saveReportAsLongImage()">导出财务分析图</button>
+        <div class="pdf-export-group">
+          <button class="btn btn-ghost" onclick="printReport()">打印 / 保存 PDF</button>
+          <span class="wechat-pdf-note">微信打开不适用；如需 PDF 版本，请跳转浏览器后重新输入数据。</span>
+        </div>
       </div>
     </div>
 
@@ -1608,6 +1614,7 @@ let autoSaveTimer=null;
 
 function initWeChatBrowserTip(){
   const isWeChat=/MicroMessenger/i.test(navigator.userAgent||'');
+  if(isWeChat) document.documentElement.classList.add('wechat-browser');
   const dismissed=sessionStorage.getItem('wechatBrowserTipDismissed')==='1';
   const tip=document.getElementById('wechatBrowserTip');
   if(isWeChat&&!dismissed&&tip) tip.classList.add('show');
