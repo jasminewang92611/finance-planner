@@ -898,6 +898,7 @@ body{
               <button class="btn-remove" onclick="removeLineItem(this);calcExpense()">×</button>
             </div>
           </div>
+          <div style="margin-top:10px;font-size:12px;color:var(--c-text-sec);line-height:1.6">注：医疗险、意外险、定期寿险、定期重疾险，是纯消费型保险。</div>
         </div>
       </div>
 
@@ -1118,13 +1119,14 @@ body{
         </div>
       </div>
 
-      <!-- 理财型保险（与资产明细对应） -->
+      <!-- 储蓄型保险（与资产明细对应） -->
       <div class="card">
         <div class="card-header">
-          <span class="card-title"><span class="card-icon">💼</span>理财型保险<span style="font-size:11px;color:var(--c-text-sec);font-weight:400">（包含终身寿险、年金险等，与资产明细对应）</span></span>
+          <span class="card-title"><span class="card-icon">💼</span>储蓄型保险</span>
         </div>
         <div class="card-body">
           <div id="wealthInsuranceDisplay"></div>
+          <div style="margin-top:10px;font-size:12px;color:var(--c-text-sec);line-height:1.6">注：终身重疾险、终身寿险、年金险等，都看作储蓄类的保险。</div>
         </div>
       </div>
 
@@ -1132,7 +1134,7 @@ body{
       <div class="summary-bar" id="premiumSummary">
         <div class="summary-item"><div class="summary-label">家庭总建议年保费</div><div class="summary-value" id="totalPremium">¥0</div></div>
         <div class="summary-item"><div class="summary-label">占家庭年收入</div><div class="summary-value" id="premiumRatio">0%</div></div>
-        <div class="summary-item"><div class="summary-label">保障型保费</div><div class="summary-value" id="protectionPremium">¥0</div></div>
+        <div class="summary-item"><div class="summary-label">消费型保费</div><div class="summary-value" id="protectionPremium">¥0</div></div>
         <div class="summary-item"><div class="summary-label">储蓄型保费</div><div class="summary-value" id="savingsPremium">¥0</div></div>
       </div>
 
@@ -1234,7 +1236,7 @@ body{
           <div class="radar-layout">
             <div class="chart-wrap"><canvas id="radarChart"></canvas></div>
             <div class="radar-formulas">
-              <div class="radar-formula" style="background:#edf4ee"><b style="color:var(--c-success)">财务安全</b>达标储蓄率 + 完善保障 + 合理保费</div>
+              <div class="radar-formula" style="background:#edf4ee"><b style="color:var(--c-success)">财务安全</b>达标储蓄率 + 完善保障</div>
               <div class="radar-formula" style="background:#eaf1f0"><b style="color:var(--c-info)">偿债安全</b>充足流动性 + 低月供压力 + 高清偿率</div>
               <div class="radar-formula" style="background:#fbf2df"><b style="color:var(--c-accent)">财务自由</b>合理资产配置 + 持续被动收入</div>
             </div>
@@ -1471,22 +1473,18 @@ const Engine = {
 
   /* ---- 综合财务健康评分 (0-100) ----
      三类指标：
-       财务安全指标：储蓄率12 + 保费支出比例12 + 保险安全度12 = 36
+       财务安全指标：储蓄率18 + 保险安全度18 = 36
        债务管理指标：流动性12 + 月度偿债管理10 + 清偿率10 = 32
        财务自由指标：投资资产占比16 + 财务自由度16 = 32 */
   healthScore(d){
     // === 财务安全指标 (36分) ===
-    // 1. 储蓄率 (0-12)
+    // 1. 储蓄率 (0-18)
     const sr=d.savingsRate;
-    const sScore = sr>=30?12 : sr>=20?9 : sr>=10?6 : sr>=5?5 : sr>=0?3 : 0;
+    const sScore = sr>=30?18 : sr>=20?14 : sr>=10?9 : sr>=5?7 : sr>=0?4 : 0;
 
-    // 2. 保费支出比例 (0-12) — 5%-10%最合理；过低通常保障不足，过高挤占储蓄
-    const ipr=d.insurancePremiumRatio||0;
-    const ipScore = ipr>=5&&ipr<=10?12 : ipr>0&&ipr<5?8 : ipr<=15?9 : ipr<=20?6 : ipr<=25?3 : 0;
-
-    // 3. 保险安全度 (0-12) — 保单配置完善程度
+    // 2. 保险安全度 (0-18) — 保单配置及所需保额的完善程度
     const is=d.insuranceSafety||0;
-    const iScore2 = is>=80?12 : is>=60?9 : is>=40?6 : is>=20?3 : 0;
+    const iScore2 = is>=80?18 : is>=60?14 : is>=40?9 : is>=20?5 : 0;
 
     // === 债务管理指标 (32分) ===
     // 4. 流动性 (0-12) — 3-6月最佳
@@ -1510,13 +1508,13 @@ const Engine = {
     const ff=d.financialFreedom||0;
     const ffScore = ff>=100?16 : ff>=50?12 : ff>=30?9 : ff>=15?5 : ff>=5?3 : 0;
 
-    const financialSecurity=(sScore+iScore2+ipScore)/36*100;
+    const financialSecurity=(sScore+iScore2)/36*100;
     const debtSafety=(lScore+dScore+svScore)/32*100;
     const financialFreedom=(iScore+ffScore)/32*100;
     return {
-      total:sScore+ipScore+iScore2+lScore+dScore+svScore+iScore+ffScore,
+      total:sScore+iScore2+lScore+dScore+svScore+iScore+ffScore,
       category:{财务安全:financialSecurity,偿债安全:debtSafety,财务自由:financialFreedom},
-      detail:{储蓄率:sScore,保费支出比例:ipScore,保险安全度:iScore2,流动性:lScore,月度偿债管理:dScore,清偿率:svScore,投资资产占比:iScore,财务自由度:ffScore}
+      detail:{储蓄率:sScore,保险安全度:iScore2,流动性:lScore,月度偿债管理:dScore,清偿率:svScore,投资资产占比:iScore,财务自由度:ffScore}
     };
   },
 
@@ -1643,7 +1641,7 @@ const ASSET_META={
   realestate:{label:'投资性房产',example:'例：出租房/商铺',bucket:'equity'},
   liquid:{label:'银行存款',example:'例：活期存款、定期存款、货币基金',bucket:'cash'},
   equity:{label:'股票/基金/投资',example:'例：股票、权益基金',bucket:'equity'},
-  insurance:{label:'理财型保险',example:'例：年金险、增额终身寿',bucket:'bond'},
+  insurance:{label:'储蓄型保险',example:'例：终身重疾险、终身寿险、年金险',bucket:'bond'},
   commodity:{label:'黄金/大宗商品',example:'例：黄金ETF、实物黄金',bucket:'commodity'},
   other:{label:'其他资产',example:'例：公积金、债权类资产',bucket:null}
 };
@@ -1654,7 +1652,7 @@ const EXPENSE_META={
   housing:{label:'房贷/房租',retirement:'continue'},
   child_support:{label:'育儿/赡养',retirement:'exclude',raising:true},
   leisure:{label:'娱乐进修',retirement:'continue'},
-  protection_insurance:{label:'保障型保险支出',retirement:'exclude',insurance:true},
+  protection_insurance:{label:'消费型保险支出',retirement:'exclude',insurance:true},
   other_continue:{label:'其他长期支出',retirement:'continue'},
   other_exclude:{label:'其他阶段性支出',retirement:'exclude'}
 };
@@ -1738,26 +1736,7 @@ function isInsuranceExpenseName(name){
   return /保险|保费/i.test(name||'');
 }
 
-
-/* ---- 同步所有表单数据到内存（修复：确保分析报告总是读取最新数据） ---- */
-function syncAllFormData(){
-  // 同步本人年龄/收入到 familyMembers
-  syncPrimaryMember();
-  // 同步 goals（通过遍历 DOM 确保数组与表单一致）
-  var goalCards=document.querySelectorAll('#goalList .goal-card');
-  goalCards.forEach(function(card,i){
-    if(i<goals.length){
-      var yearsInput=card.querySelector('input[type=number][min]');
-      var amountInput=card.querySelectorAll('input[type=number]')[1];
-      var nameInput=card.querySelector('input:not([type=number])');
-      if(yearsInput) goals[i].years=parseInt(yearsInput.value)||goals[i].years;
-      if(amountInput) goals[i].amount=parseFloat(amountInput.value)||0;
-      if(nameInput) goals[i].name=nameInput.value||goals[i].name;
-    }
-  });
-  // 标记报告需要刷新
-  window._reportDirty=true;
-}function syncPrimaryMember(){
+function syncPrimaryMember(){
   const age=parseInt(document.getElementById('clientAge')?.value)||35;
   const income=parseSum('#incomeList');
   familyMembers.forEach(function(m){
@@ -1816,7 +1795,7 @@ function goStep(n){
   document.getElementById('navBadge').textContent='步骤 '+n+' / 7';
   // 每次切换步骤自动保存
   if(n>1) saveData();
-  if(n===6){ syncAllFormData(); generateReport(); }
+  if(n===6) generateReport();
   if(n===7) renderAllWeatherPhilosophy();
   window.scrollTo({top:0,behavior:'smooth'});
 }
@@ -1861,7 +1840,6 @@ function checkForUpdate(){
 
 async function saveReportAsLongImage(){
   if(typeof html2canvas!=='function'){showToast('长图组件加载失败，请检查网络后重试');return;}
-  syncAllFormData();
   generateReport();
   if(charts.radar) charts.radar.update('none');
   if(charts.roi) charts.roi.update('none');
@@ -1968,7 +1946,7 @@ function addAssetItem(){
       <option value="realestate">投资性房产（例：出租房/商铺）</option>
       <option value="equity" selected>股票/基金/投资（例：股票、权益基金）</option>
       <option value="liquid">银行存款（例：活期存款、定期存款、货币基金）</option>
-      <option value="insurance">理财型保险（例：年金险、增额终身寿）</option>
+      <option value="insurance">储蓄型保险（例：终身重疾险、终身寿险、年金险）</option>
       <option value="commodity">黄金/大宗商品（例：黄金ETF、实物黄金）</option>
       <option value="other">其他资产（例：公积金、债权类资产）</option>
     </select>
@@ -2293,11 +2271,11 @@ function analyzeInsurance(){
   const totalPremium=totalProtectionPremium+totalSavingsPremium;
   const premiumRatio=annualIncome>0?(totalPremium/annualIncome*100):0;
 
-  // 理财型保险：直接对应资产明细中选择的“理财型保险”项目，并可汇总多笔保单
+  // 储蓄型保险：直接对应资产明细中选择的“储蓄型保险”项目，并可汇总多笔保单
   let wealthInsName='',wealthInsValue=0;
   document.querySelectorAll('#assetList .line-item').forEach(item=>{
     const category=item.querySelector('.asset-cat')?.value||'';
-    const name=item.querySelector('.asset-cat')?.selectedOptions?.[0]?.textContent||'理财型保险';
+    const name=item.querySelector('.asset-cat')?.selectedOptions?.[0]?.textContent||'储蓄型保险';
     const val=parseFloat(item.querySelector('input[type=number]')?.value)||0;
     if(category==='insurance'){
       wealthInsName=name.replace(/（.*?）/,'');
@@ -2330,8 +2308,8 @@ function analyzeInsurance(){
     }else{
       wealthDisplay.innerHTML=`
         <div style="text-align:center;padding:28px;color:var(--c-text-sec)">
-          <div style="font-size:14px;margin-bottom:6px">暂未配置理财型保险</div>
-          <div style="font-size:12px">请在「资产明细」中填写"理财型保险"项</div>
+          <div style="font-size:14px;margin-bottom:6px">暂未配置储蓄型保险</div>
+          <div style="font-size:12px">请在「资产明细」中填写“储蓄型保险”项</div>
         </div>`;
     }
   }
@@ -2440,12 +2418,12 @@ function renderFamilyUI(){
         <div class="form-grid" style="grid-template-columns:1fr 1fr">
           <div class="form-group"><label class="form-label">是否有医保</label><select class="form-select" style="padding:6px 8px;font-size:12px" onchange="let fm=familyMembers.find(x=>x.id==${m.id});fm.basicMedical=this.value;analyzeInsurance()"><option value="unknown" ${m.basicMedical==='unknown'?'selected':''}>待核对</option><option value="employee" ${m.basicMedical==='employee'?'selected':''}>职工医保（单位职工/退休人员）</option><option value="resident" ${m.basicMedical==='resident'?'selected':''}>居民医保（城乡居民按年缴费）</option><option value="none" ${m.basicMedical==='none'?'selected':''}>无医保/断缴</option></select></div>
           <div class="form-group"><label class="form-label">医疗备用金</label><div class="form-suffix"><input class="form-input" type="number" min="0" value="${(m.medicalReserve||0)/10000}" style="padding:6px 8px;font-size:12px" oninput="let fm=familyMembers.find(x=>x.id==${m.id});fm.medicalReserve=(parseFloat(this.value)||0)*10000;analyzeInsurance()"><span class="form-unit" style="padding:6px 8px;font-size:12px"><b>万</b>元</span></div></div>
-          <div class="form-group"><label class="form-label">已有重疾险（仅记录）</label><div class="form-suffix"><input class="form-input" type="number" min="0" value="${m.existingCriticalIll}" style="padding:6px 8px;font-size:12px" oninput="let fm=familyMembers.find(x=>x.id==${m.id});fm.existingCriticalIll=parseFloat(this.value)||0;analyzeInsurance()"><span class="form-unit" style="padding:6px 8px;font-size:12px">万元</span></div></div>
+          <div class="form-group"><label class="form-label">已有重疾险保额（仅记录）</label><div class="form-suffix"><input class="form-input" type="number" min="0" value="${m.existingCriticalIll}" style="padding:6px 8px;font-size:12px" oninput="let fm=familyMembers.find(x=>x.id==${m.id});fm.existingCriticalIll=parseFloat(this.value)||0;analyzeInsurance()"><span class="form-unit" style="padding:6px 8px;font-size:12px">万元</span></div></div>
           <div class="form-group"><label class="form-label">已有医疗险（仅记录）</label><select class="form-select" style="padding:6px 8px;font-size:12px" onchange="let fm=familyMembers.find(x=>x.id==${m.id});fm.existingMedical=this.value;analyzeInsurance()"><option value="none" ${m.existingMedical==='none'?'selected':''}>无/不适用</option><option value="million" ${m.existingMedical==='million'?'selected':''}>百万医疗险</option><option value="mid" ${m.existingMedical==='mid'?'selected':''}>中端医疗险</option><option value="high" ${m.existingMedical==='high'?'selected':''}>高端医疗险</option></select></div>
-          <div class="form-group"><label class="form-label">已有意外险</label><div class="form-suffix"><input class="form-input" type="number" min="0" value="${m.existingAccident}" style="padding:6px 8px;font-size:12px" oninput="let fm=familyMembers.find(x=>x.id==${m.id});fm.existingAccident=parseFloat(this.value)||0;analyzeInsurance()"><span class="form-unit" style="padding:6px 8px;font-size:12px">万元</span></div></div>
+          <div class="form-group"><label class="form-label">已有意外险保额</label><div class="form-suffix"><input class="form-input" type="number" min="0" value="${m.existingAccident}" style="padding:6px 8px;font-size:12px" oninput="let fm=familyMembers.find(x=>x.id==${m.id});fm.existingAccident=parseFloat(this.value)||0;analyzeInsurance()"><span class="form-unit" style="padding:6px 8px;font-size:12px">万元</span></div></div>
           <div class="form-group"><label class="form-label">是否承担家庭经济责任</label><label style="padding:7px 0"><input type="checkbox" ${m.isBreadwinner?'checked':''} onchange="let fm=familyMembers.find(x=>x.id==${m.id});fm.isBreadwinner=this.checked;analyzeInsurance()"> 有稳定收入并承担家庭支出</label></div>
         </div>
-        <div class="form-group" style="margin-top:8px"><label class="form-label">已有定期寿险</label><div class="form-suffix"><input class="form-input" type="number" min="0" value="${m.existingTermLife}" style="padding:6px 8px;font-size:12px" oninput="let fm=familyMembers.find(x=>x.id==${m.id});fm.existingTermLife=parseFloat(this.value)||0;analyzeInsurance()"><span class="form-unit" style="padding:6px 8px;font-size:12px">万元</span></div></div>
+        <div class="form-group" style="margin-top:8px"><label class="form-label">已有定期寿险保额</label><div class="form-suffix"><input class="form-input" type="number" min="0" value="${m.existingTermLife}" style="padding:6px 8px;font-size:12px" oninput="let fm=familyMembers.find(x=>x.id==${m.id});fm.existingTermLife=parseFloat(this.value)||0;analyzeInsurance()"><span class="form-unit" style="padding:6px 8px;font-size:12px">万元</span></div></div>
       </div>`:''}
       ${m.relationship==='子女'&&!isSenior?`<div style="margin-top:10px;padding:10px 12px;background:#eaf1f0;border-radius:8px;font-size:12px">
         <div style="font-weight:700;color:var(--c-primary)">子女保单资料</div>
@@ -2453,7 +2431,7 @@ function renderFamilyUI(){
       </div>`:''}
       <div class="form-grid" style="display:${isSenior?'none':'grid'};grid-template-columns:1fr 1fr">
         <div class="form-group">
-          <label class="form-label">已有定期寿险${isChild?'（18岁以下不能购买）':!isWageEarner&&m.relationship!=='本人'?'（无需）':''}</label>
+          <label class="form-label">已有定期寿险保额${isChild?'（18岁以下不能购买）':!isWageEarner&&m.relationship!=='本人'?'（无需）':''}</label>
           <div class="form-suffix">
             <input class="form-input" type="number" min="0" value="${m.existingTermLife}" style="padding:6px 8px;font-size:12px" ${!isWageEarner?'disabled':''}
               oninput="let fm=familyMembers.find(x=>x.id==${m.id});fm.existingTermLife=parseFloat(this.value)||0;analyzeInsurance()">
@@ -2461,7 +2439,7 @@ function renderFamilyUI(){
           </div>
         </div>
         <div class="form-group">
-          <label class="form-label">已有重疾险</label>
+          <label class="form-label">已有重疾险保额</label>
           <div class="form-suffix">
             <input class="form-input" type="number" min="0" value="${m.existingCriticalIll}" style="padding:6px 8px;font-size:12px"
               oninput="let fm=familyMembers.find(x=>x.id==${m.id});fm.existingCriticalIll=parseFloat(this.value)||0;analyzeInsurance()">
@@ -2481,7 +2459,7 @@ function renderFamilyUI(){
           </select>
         </div>
         <div class="form-group">
-          <label class="form-label">已有意外险</label>
+          <label class="form-label">已有意外险保额</label>
           <div class="form-suffix">
             <input class="form-input" type="number" min="0" value="${m.existingAccident}" style="padding:6px 8px;font-size:12px"
               oninput="let fm=familyMembers.find(x=>x.id==${m.id});fm.existingAccident=parseFloat(this.value)||0;analyzeInsurance()">
@@ -2504,9 +2482,6 @@ renderFamilyUI();
 function generateReport(){
   // 报告生成前再次同步本人资料，避免跳过保单页面时使用旧的年龄或收入。
   syncPrimaryMember();
-  // 清空旧报告，避免数据校验失败时残留旧数据
-  var rh=document.getElementById('reportHeader'); if(rh) rh.style.display='none';
-  var cr=document.getElementById('comprehensiveReview'); if(cr) cr.innerHTML='';
   // 收集数据
   const age=parseInt(document.getElementById('clientAge').value)||35;
   const retireAge=parseInt(document.getElementById('retireAge').value)||60;
@@ -2571,7 +2546,7 @@ function generateReport(){
   const ir=Engine.investmentRatio(investAssets,totalAssets);
   const ff=Engine.financialFreedom(passiveIncome,expense);
 
-  // 保费支出比例
+  // 消费型保费支出比例：仅取月度支出中的消费型保险，不包含储蓄型保险
   const insurancePremiumRatio=income>0?(insuranceExpense/income*100):0;
 
   // 保险安全度（保单配置完善程度——基于家庭成员现有保单与需求对比）
@@ -2711,7 +2686,7 @@ function renderAllocTable(alloc,investAmount){
       adviceText='比例合理';adviceColor='var(--c-success)';adviceIcon='✓';
     }
 
-    const displayName = k === '大宗商品' ? '大宗商品(黄金等)' : k === '长债' ? '长债（理财型保险等）' : k === '股票(权益类)' ? '股票/基金类' : k;
+    const displayName = k === '大宗商品' ? '大宗商品(黄金等)' : k === '长债' ? '长债（储蓄型保险等）' : k === '股票(权益类)' ? '股票/基金类' : k;
     return `<tr>
       <td><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${a.color};margin-right:6px"></span>${displayName}</td>
       <td style="font-weight:600;color:var(--c-primary)">${a.range}</td>
@@ -3284,7 +3259,6 @@ function renderRadarChart(category,metrics){
   const dimGroups=[
     {cat:'财务安全指标',rows:[
       {key:'储蓄率',meaning:'月结余占月收入比例，反映储蓄能力',value:s.toFixed(1)+'%',range:'≥20%合理 / ≥30%优秀',isOk:s>=20},
-      {key:'保费支出比例',meaning:'年保费占年收入比例，兼顾保障与储蓄',value:p.toFixed(1)+'%',range:(is>=60?(p<5?'覆盖基本达标，可适当增配':p<=10?'5%-10%最合理':p<=15?'覆盖达标，保费略高可优化':'覆盖达标，保费偏高建议复核'):(p<5?'保费投入不足，保障缺口严重':p>=5&&p<=10?'保费合理但覆盖不足，优先补全保障':p>15?'保费严重超标，建议优化':'保费偏高，核查必要性')),isOk:p>=5&&p<=10},
       {key:'保险安全度',meaning:'保单配置完善程度（覆盖/需求）',value:is.toFixed(0)+'%',range:'≥80%完善 / ≥60%基本',isOk:is>=80}
     ]},
     {cat:'债务管理指标',rows:[
