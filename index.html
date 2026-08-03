@@ -623,6 +623,24 @@ body{
 }
 
 /* ==================== 移动端导航面板 ==================== */
+/* Export-only radar layout: larger chart, tighter formula-card spacing. */
+body.report-image-exporting .radar-layout{
+  grid-template-columns:minmax(0,1.45fr) minmax(260px,.8fr);
+  gap:20px;
+  align-items:center;
+}
+body.report-image-exporting .radar-layout .chart-wrap{
+  height:205px;
+}
+body.report-image-exporting .radar-formulas{
+  justify-content:center;
+  gap:18px;
+  align-self:center;
+}
+body.report-image-exporting .radar-formula{
+  padding:10px 12px;
+}
+
 .mobile-nav-overlay{
   display:none;position:fixed;top:0;left:0;width:100%;height:100%;
   background:rgba(0,0,0,.4);z-index:200;
@@ -1851,12 +1869,31 @@ async function saveReportAsLongImage(){
   preview.hidden=true; preview.removeAttribute('src'); loading.style.display='block';
   hint.textContent=isWeChat?'请长按下方图片，选择“保存图片”。':'图片会自动下载，也可以长按或右键保存。';
   modal.classList.add('show'); document.body.style.overflow='hidden';
+  const report=document.getElementById('step6');
+  const exportWidth=900;
+  const previousReportStyle={width:report.style.width,maxWidth:report.style.maxWidth};
+  const roiChartHeight=document.querySelector('#roiChart')?.parentElement?.getBoundingClientRect().height||280;
   try{
+    // Chart.js keeps the canvas size from the mobile viewport. Temporarily lay the
+    // report out at the export width so the chart uses the full horizontal space;
+    // retain the current chart height to avoid making the report taller.
+    report.style.width=exportWidth+'px';
+    report.style.maxWidth=exportWidth+'px';
+    const roiWrap=document.querySelector('#roiChart')?.parentElement;
+    if(roiWrap) roiWrap.style.height=roiChartHeight+'px';
+    document.body.classList.add('report-image-exporting');
+    if(charts.radar) charts.radar.resize();
+    if(charts.roi){
+      charts.roi.options.plugins.legend.labels.font.size=14;
+      charts.roi.options.scales.x.ticks.font={size:13};
+      charts.roi.options.scales.y.ticks.font={size:13};
+      charts.roi.resize();
+      charts.roi.update('none');
+    }
     await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
-    const report=document.getElementById('step6');
     const canvas=await html2canvas(report,{
       backgroundColor:'#f3eee5',scale:isWeChat?1.5:Math.min(window.devicePixelRatio||1,2),useCORS:true,logging:false,
-      windowWidth:Math.max(report.scrollWidth,900),
+      windowWidth:Math.max(report.scrollWidth,exportWidth),
       onclone:function(doc){
         doc.querySelectorAll('#step6 .btn-row,[data-html2canvas-ignore="true"]').forEach(el=>el.style.display='none');
         const clonedStep=doc.getElementById('step6');
@@ -1871,6 +1908,20 @@ async function saveReportAsLongImage(){
     }
   }catch(error){
     console.error(error);closeReportImageModal();showToast('长图生成失败，请稍后重试或使用 PDF 导出');
+  }finally{
+    report.style.width=previousReportStyle.width;
+    report.style.maxWidth=previousReportStyle.maxWidth;
+    const roiWrap=document.querySelector('#roiChart')?.parentElement;
+    if(roiWrap) roiWrap.style.height='';
+    document.body.classList.remove('report-image-exporting');
+    if(charts.radar) charts.radar.resize();
+    if(charts.roi){
+      charts.roi.options.plugins.legend.labels.font.size=12;
+      charts.roi.options.scales.x.ticks.font={size:12};
+      charts.roi.options.scales.y.ticks.font={size:12};
+      charts.roi.resize();
+      charts.roi.update('none');
+    }
   }
 }
 
@@ -2739,8 +2790,8 @@ function renderAllWeatherPhilosophy(alloc,investAmount){
         每个阶段都有一类资产表现最优。将<b>四大类资产</b>按固定比例同时持有，就能在任何经济季节中都有资产"开花结果"，
         实现<b>不预测市场、不择时、穿越牛熊</b>的长期稳健收益。
       </div>
-      <div style="margin-top:10px;padding:8px 12px;background:rgba(201,168,76,.2);border-radius:6px;font-size:12px">
-        💡 <b>回测数据：</b>过去10年，该组合年化收益率约<b>6.71%</b>，最大回撤仅<b>17.55%</b>，表现稳定优越。
+      <div style="margin-top:10px;padding:10px 14px;background:rgba(201,168,76,.2);border-radius:6px;font-size:14px;line-height:1.65">
+        💡 <b>回测数据：</b>过去10年，该组合在A股的年化收益率约<b style="font-size:16px">6.71%</b>，最大回撤仅<b style="font-size:16px">17.55%</b>，表现稳定优越。
       </div>
     </div>
 
@@ -3398,7 +3449,7 @@ function renderROIChart(principal,monthlyContribution,workYears,currentAge,retir
         const meta=chart.getDatasetMeta(0);
         const meta2=chart.getDatasetMeta(1);
         ctx.save();
-        ctx.font='bold 11px sans-serif';
+        ctx.font=(document.body.classList.contains('report-image-exporting')?'bold 13px':'bold 11px')+' sans-serif';
         ctx.textAlign='center';
         annotations.forEach(function(a){
           var point=null;
