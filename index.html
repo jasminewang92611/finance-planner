@@ -179,6 +179,8 @@ body{
 .card-title{font-size:16px;font-weight:700;color:var(--c-primary);font-family:'STSong','SimSun','Microsoft YaHei',serif;letter-spacing:.4px}
 .card-icon{font-size:18px;margin-right:8px}
 .card-body{padding:20px 24px}
+.local-save-notice{display:flex;align-items:center;gap:8px;margin-bottom:16px;padding:10px 12px;background:#f8f1e5;border:1px solid #dfcfb4;border-radius:8px;color:var(--c-text-sec);font-size:12px;line-height:1.6}
+.local-save-notice-icon{flex:0 0 auto;font-size:15px}
 
 /* ==================== 表单元素 ==================== */
 .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
@@ -765,6 +767,10 @@ body.report-image-exporting .radar-formula{
           <span class="card-title"><span class="card-icon">📋</span>客户基本信息</span>
         </div>
         <div class="card-body">
+          <div class="local-save-notice" role="note">
+            <span class="local-save-notice-icon" aria-hidden="true">💾</span>
+            <span>数据已自动保存在本机，关闭页面后再次打开仍可继续填写。</span>
+          </div>
           <div class="form-grid">
             <div class="form-group">
               <label class="form-label">姓名<span class="req">*</span></label>
