@@ -1328,7 +1328,7 @@ body.report-image-exporting .radar-formula{
       <div class="card">
         <div class="card-header">
           <span class="card-title"><span class="card-icon">📋</span>财务诊断</span>
-          <span style="font-size:11px;color:var(--c-text-sec)">健康程度 · 主要发现 · 改善方向 · 决策边界</span>
+          <span style="font-size:11px;color:var(--c-text-sec)">健康程度 · 主要发现 · 改善方向</span>
         </div>
         <div class="card-body">
           <div id="comprehensiveReview"></div>
@@ -2696,6 +2696,24 @@ function generateReport(){
   const passiveIncomeIsEstimated=passiveInput<=0;
   const passiveIncome=passiveIncomeIsEstimated?investAssets*0.025/12:passiveInput;
 
+  // 数据完整度检查：允许继续生成报告，但不对缺少关键数据的项目强行下结论。
+  const dataQualityIssues=[];
+  if(expense<=0){
+    dataQualityIssues.push({code:'missing_expense',text:'暂未填写月度支出，储蓄率和应急资金覆盖月数暂时无法可靠判断。'});
+  }
+  if(totalLiab>0&&monthlyDebtPay<=0){
+    dataQualityIssues.push({code:'missing_debt_payment',text:'已填写负债，但未填写每月还款额，暂时无法判断还款压力。'});
+  }
+  const hasInsuranceData=familyMembers.some(m=>(m.existingTermLife||0)>0||(m.existingCriticalIll||0)>0||(m.existingAccident||0)>0||m.existingMedical!=='none');
+  const primaryAgeValue=parseFloat(document.getElementById('clientAge')?.value);
+  const insuranceBaseIncomplete=!Number.isFinite(primaryAgeValue)||primaryAgeValue<=0||familyMembers.some(m=>!Number.isFinite(Number(m.age))||Number(m.age)<=0||(m.isBreadwinner&&(m.monthlyIncome||0)<=0));
+  if(hasInsuranceData&&insuranceBaseIncomplete){
+    dataQualityIssues.push({code:'incomplete_insurance_base',text:'已填写保单资料，但部分成员缺少有效年龄或经济支柱收入，建议保额和保险安全度可能不够准确。'});
+  }
+  if(totalAssets<=0&&passiveInput>0){
+    dataQualityIssues.push({code:'passive_without_assets',text:'已填写被动收入，但当前资产为0，请确认被动收入来源和资产资料是否填写完整。'});
+  }
+
   // 计算各项指标
   const sr=Engine.savingsRate(income,expense);
   const dti=Engine.debtToIncome(monthlyDebtPay,income);
@@ -2787,7 +2805,7 @@ function generateReport(){
   renderInsuranceAdequacy();
 
   // 综合点评
-  renderComprehensiveReview(health,{sr,dti,liq,ir,sv,ff,ipr:insurancePremiumRatio,is:insuranceSafety},{income,expense,surplus,totalAssets,totalLiab,netWorth,investAssets,liquidAssets,passiveIncome,passiveIncomeIsEstimated,age,retireAge,selectedRisk});
+  renderComprehensiveReview(health,{sr,dti,liq,ir,sv,ff,ipr:insurancePremiumRatio,is:insuranceSafety},{income,expense,surplus,totalAssets,totalLiab,netWorth,investAssets,liquidAssets,monthlyDebtPay,passiveIncome,passiveIncomeIsEstimated,dataQualityIssues,age,retireAge,selectedRisk});
 
   // 自动保存数据
   saveData();
@@ -3663,19 +3681,20 @@ function renderComprehensiveReview(health,metrics,fin){
   var grade=score>=80?'A\uFF08\u4F18\u79C0\uFF09':score>=60?'B\uFF08\u826F\u597D\uFF09':score>=40?'C\uFF08\u9700\u6539\u5584\uFF09':'D\uFF08\u4E9F\u9700\u6539\u5584\uFF09';
   var gradeColor=score>=80?'var(--c-success)':score>=60?'var(--c-accent)':score>=40?'var(--c-warning)':'var(--c-danger)';
   var gradeBg=score>=80?'#f0fff4':score>=60?'#fffbeb':score>=40?'#fffaf0':'#fff5f5';
+  var qualityCodes=new Set((fin.dataQualityIssues||[]).map(function(issue){return issue.code;}));
 
   var dims=[
-    {name:'\u50A8\u84C4\u7387',val:metrics.sr,score:health.detail['\u50A8\u84C4\u7387'],max:16,unit:'%',good:metrics.sr>=20},
-    {name:'\u4FDD\u9669\u5B89\u5168\u5EA6',val:metrics.is,score:health.detail['\u4FDD\u9669\u5B89\u5168\u5EA6'],max:14,unit:'%',good:metrics.is>=60},
-    {name:'\u6D41\u52A8\u6027',val:metrics.liq,score:health.detail['\u6D41\u52A8\u6027'],max:14,unit:'\u4E2A\u6708',good:metrics.liq>=6},
-    {name:'\u6708\u5EA6\u507F\u503A\u7BA1\u7406',val:metrics.dti,score:health.detail['\u6708\u5EA6\u507F\u503A\u7BA1\u7406'],max:14,unit:'%',good:metrics.dti<=36},
+    {name:'\u50A8\u84C4\u7387',val:metrics.sr,score:health.detail['\u50A8\u84C4\u7387'],max:16,unit:'%',good:metrics.sr>=20,valid:!qualityCodes.has('missing_expense')},
+    {name:'\u4FDD\u9669\u5B89\u5168\u5EA6',val:metrics.is,score:health.detail['\u4FDD\u9669\u5B89\u5168\u5EA6'],max:14,unit:'%',good:metrics.is>=60,valid:!qualityCodes.has('incomplete_insurance_base')},
+    {name:'\u6D41\u52A8\u6027',val:metrics.liq,score:health.detail['\u6D41\u52A8\u6027'],max:14,unit:'\u4E2A\u6708',good:metrics.liq>=6,valid:!qualityCodes.has('missing_expense')},
+    {name:'\u6708\u5EA6\u507F\u503A\u7BA1\u7406',val:metrics.dti,score:health.detail['\u6708\u5EA6\u507F\u503A\u7BA1\u7406'],max:14,unit:'%',good:metrics.dti<=36,valid:!qualityCodes.has('missing_debt_payment')},
     {name:'\u6E05\u507F\u7387',val:(metrics.sv*100),score:health.detail['\u6E05\u507F\u7387'],max:14,unit:'%',good:metrics.sv>=0.5},
     {name:'\u6295\u8D44\u8D44\u4EA7\u5360\u6BD4',val:metrics.ir,score:health.detail['\u6295\u8D44\u8D44\u4EA7\u5360\u6BD4'],max:14,unit:'%',good:metrics.ir>=30},
     {name:'\u8D22\u52A1\u81EA\u7531\u5EA6',val:metrics.ff,score:health.detail['\u8D22\u52A1\u81EA\u7531\u5EA6'],max:14,unit:'%',good:metrics.ff>=30}
   ];
 
-  var strengths=dims.filter(function(d){return d.good;});
-  var risks=dims.filter(function(d){return !d.good;});
+  var strengths=dims.filter(function(d){return d.valid!==false&&d.good;});
+  var risks=dims.filter(function(d){return d.valid!==false&&!d.good;});
 
   var s=metrics.sr.toFixed(1), isVal=metrics.is.toFixed(0), l=metrics.liq.toFixed(1);
   var d=metrics.dti.toFixed(1), ir=metrics.ir.toFixed(1), ff=metrics.ff.toFixed(1);
@@ -3700,13 +3719,18 @@ function renderComprehensiveReview(health,metrics,fin){
   }
 
   var actions=[];
-  if(fin.surplus<=0) actions.push({level:'重点关注',title:'改善现金流',direction:'梳理收支缺口，重点关注非必要支出和收入稳定性。',target:'参考目标：月结余不低于0。'});
-  if(metrics.liq<3) actions.push({level:'重点关注',title:'建立应急缓冲',direction:'逐步增加高流动性资金，应对医疗、失业等突发支出。',target:'参考目标：流动资金达到至少3个月支出。'});
-  if(metrics.is<60) actions.push({level:'重点关注',title:'核对保障缺口',direction:'了解现有保障与主要风险之间的差距。',target:'参考目标：保险安全度达到60%以上。'});
-  if(metrics.dti>36) actions.push({level:'重点关注',title:'缓解债务压力',direction:'梳理负债成本、期限和月供，重点关注高成本负债。',target:'参考目标：月度偿债比例降至36%以下。'});
-  if(metrics.sr<20&&fin.surplus>0) actions.push({level:'建议关注',title:'稳定持续储蓄',direction:'保持稳定结余，为应急和中长期目标持续积累。',target:'参考目标：储蓄率逐步达到20%以上。'});
-  if(metrics.ir<30&&metrics.liq>=3&&fin.surplus>0) actions.push({level:'持续观察',title:'观察长期配置',direction:'关注长期资产结构与风险承受能力、资金期限是否匹配。',target:'参考目标：投资资产占比逐步接近30%以上。'});
-  if(actions.length===0) actions.push({level:'保持',title:'定期回看',direction:'关注收支、资产负债、保障和目标是否发生明显变化。',target:'参考频率：每季度回看一次。'});
+  var issueCodes=new Set((fin.dataQualityIssues||[]).map(function(issue){return issue.code;}));
+  (fin.dataQualityIssues||[]).forEach(function(issue){
+    actions.push({level:'数据提示',title:'部分资料未填写',direction:issue.text,target:'当前评分按现有资料计算，请结合该提示理解结果。'});
+  });
+  if(fin.surplus<0&&fin.expense>0) actions.push({level:'重点关注',title:'让每月有结余',direction:'你目前每月支出比收入多约 ¥'+fmt(Math.abs(fin.surplus))+'，可以先从金额较大的支出项目入手，找出能够调整的部分。',target:'参考状态：每月收入能够覆盖支出，并留下一些结余。'});
+  if(fin.surplus===0&&fin.expense>0) actions.push({level:'重点关注',title:'让每月有结余',direction:'你目前每月收入和支出基本持平，还没有形成稳定结余。',target:'参考状态：每月收入能够覆盖支出，并留下一些结余。'});
+  if(fin.expense>0&&metrics.liq<3) actions.push({level:'重点关注',title:'留出应急备用钱',direction:'你目前随时可用的钱约能覆盖 '+metrics.liq.toFixed(1)+' 个月生活支出，应对生病、失业等突发情况的缓冲还不够。',target:'参考状态：随时可用的钱至少能够覆盖3个月生活支出。'});
+  if(!issueCodes.has('incomplete_insurance_base')&&metrics.is<60) actions.push({level:'重点关注',title:'补齐必要保障',direction:'你目前的保险安全度为 '+metrics.is.toFixed(0)+'%，上方保单分析中标出的不足项目值得优先关注。',target:'参考状态：基本保障项目大致齐全，保险安全度达到60%以上。'});
+  if(!issueCodes.has('missing_debt_payment')&&metrics.dti>36) actions.push({level:'重点关注',title:'减轻每月还款压力',direction:'你目前每月还款约占月收入的 '+metrics.dti.toFixed(1)+'%，还款对日常生活资金形成了一定压力。',target:'参考状态：每月还款不超过月收入的36%。'});
+  if(fin.expense>0&&metrics.sr<20&&fin.surplus>0) actions.push({level:'建议关注',title:'每月稳定存下一笔钱',direction:'你目前每月大约能存下收入的 '+metrics.sr.toFixed(1)+'%，距离较稳定的积累水平还有提升空间。',target:'参考状态：每月存下的钱达到月收入的20%以上。'});
+  if(metrics.ir<30&&metrics.liq>=3&&fin.surplus>0) actions.push({level:'持续观察',title:'为长期目标积累资产',direction:'你目前长期投资资产约占总资产的 '+metrics.ir.toFixed(1)+'%，在留够应急备用钱后，可以继续关注长期积累。',target:'参考状态：长期投资资产占总资产的比例逐步接近30%以上。'});
+  if(actions.length===0) actions.push({level:'保持',title:'定期看看有没有变化',direction:'你目前主要诊断指标整体处于参考范围，可以继续留意收入、支出、负债、保障和目标的变化。',target:'参考频率：每季度简单回看一次。'});
   actions=actions.slice(0,5);
 
   var freedomTarget=fin.expense*12/0.04;
@@ -3731,7 +3755,7 @@ function renderComprehensiveReview(health,metrics,fin){
   }
 
   var actionsHtml=actions.map(function(a,i){
-    var levelColor=a.level==='重点关注'?'var(--c-warning)':a.level==='建议关注'?'var(--c-accent)':a.level==='持续观察'?'var(--c-info)':'var(--c-success)';
+    var levelColor=a.level==='数据提示'?'var(--c-text-sec)':a.level==='重点关注'?'var(--c-warning)':a.level==='建议关注'?'var(--c-accent)':a.level==='持续观察'?'var(--c-info)':'var(--c-success)';
     return '<div class="action-plan-item" style="display:grid;grid-template-columns:28px minmax(0,1fr);gap:10px;padding:10px 0;'+(i?'border-top:1px solid var(--c-border)':'')+'">'
       +'<div class="action-plan-num" style="width:24px;height:24px;border-radius:50%;background:'+levelColor+';color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700">'+(i+1)+'</div>'
       +'<div><div class="action-plan-title" style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-bottom:3px"><b style="font-size:13px;color:var(--c-primary)">'+a.title+'</b><span style="font-size:10px;padding:1px 7px;border-radius:10px;background:'+levelColor+';color:#fff">'+a.level+'</span></div>'
@@ -3745,8 +3769,11 @@ function renderComprehensiveReview(health,metrics,fin){
   var passiveIncomeNote=fin.passiveIncomeIsEstimated
     ?'被动收入口径：未填写实际被动收入，系统按投资资产×2.5%/年估算为 <span class="sensitive-financial">¥'+fmt(fin.passiveIncome)+'/月</span>。'
     :'被动收入口径：采用用户填写的实际被动收入 <span class="sensitive-financial">¥'+fmt(fin.passiveIncome)+'/月</span>。';
+  var dataQualityHtml=(fin.dataQualityIssues||[]).length
+    ?'<div style="margin-bottom:14px;padding:10px 12px;border:1px solid var(--c-warning);border-radius:8px;background:#fffaf0;color:var(--c-warning);font-size:12px;line-height:1.6"><b>数据完整度提示：</b>本次有 '+fin.dataQualityIssues.length+' 项资料未填写或需要确认。报告仍按现有资料给出评分，相关指标可能受到影响，请结合提示理解结果。</div>'
+    :'';
 
-  el.innerHTML='<div style="display:flex;gap:16px;margin-bottom:16px;flex-wrap:wrap">'
+  el.innerHTML=dataQualityHtml+'<div style="display:flex;gap:16px;margin-bottom:16px;flex-wrap:wrap">'
     +'<div style="flex:1;min-width:200px;background:'+gradeBg+';border-radius:12px;padding:20px;text-align:center">'
     +'<div style="font-size:13px;color:var(--c-text-sec);margin-bottom:6px">一、健康程度</div>'
     +'<div style="font-size:42px;font-weight:800;color:'+gradeColor+';line-height:1">'+score+'</div>'
@@ -3776,9 +3803,8 @@ function renderComprehensiveReview(health,metrics,fin){
     +'<div style="font-size:11px;color:var(--c-text-sec);margin-top:3px;margin-bottom:6px">仅提示优先关注方向，不构成具体方案。</div>'
     +actionsHtml
     +'</div>'
-    +'<div class="decision-boundary" style="margin-top:16px;padding:14px 16px;border:1px solid var(--c-border);border-left:4px solid var(--c-accent);border-radius:8px;background:#fffaf0">'
-    +'<div style="font-size:14px;font-weight:700;color:var(--c-primary);margin-bottom:6px">四、决策边界</div>'
-    +'<div style="font-size:12px;line-height:1.75;color:var(--c-text-sec)">本诊断用于帮助您了解家庭财务的大致健康程度、主要风险与可关注方向，不推荐具体保险、基金或其他金融产品，不替代您作出财务决策，也不对未来结果作出保证。是否行动、何时行动以及采用何种方式，请结合自身情况独立判断；如涉及投资、保险、税务或法律问题，可自行向相应领域的专业人士进一步了解。</div>'
+    +'<div class="decision-boundary" style="margin-top:14px;padding:10px 14px;border-left:3px solid var(--c-accent);border-radius:6px;background:#fffaf0">'
+    +'<div style="font-size:11px;line-height:1.7;color:var(--c-text-sec)"><b style="color:var(--c-accent)">提示：</b>本诊断用于帮助您了解财务健康程度、主要风险与可关注方向，不推荐具体保险、基金或其他金融产品，不替代您作出财务决策，也不对未来结果作出保证。是否行动以及采用何种方式，请结合自身情况独立判断；如涉及投资、保险、税务或法律问题，可向相应领域的专业人士进一步了解。</div>'
     +'</div>';
 }
 
