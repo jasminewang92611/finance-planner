@@ -3769,9 +3769,16 @@ function renderComprehensiveReview(health,metrics,fin){
   var passiveIncomeNote=fin.passiveIncomeIsEstimated
     ?'被动收入口径：未填写实际被动收入，系统按投资资产×2.5%/年估算为 <span class="sensitive-financial">¥'+fmt(fin.passiveIncome)+'/月</span>。'
     :'被动收入口径：采用用户填写的实际被动收入 <span class="sensitive-financial">¥'+fmt(fin.passiveIncome)+'/月</span>。';
-  var dataQualityHtml=(fin.dataQualityIssues||[]).length
-    ?'<div style="margin-bottom:14px;padding:10px 12px;border:1px solid var(--c-warning);border-radius:8px;background:#fffaf0;color:var(--c-warning);font-size:12px;line-height:1.6"><b>数据完整度提示：</b>本次有 '+fin.dataQualityIssues.length+' 项资料未填写或需要确认。报告仍按现有资料给出评分，相关指标可能受到影响，请结合提示理解结果。</div>'
-    :'';
+  var dataQualityHtml='';
+  if((fin.dataQualityIssues||[]).length){
+    var qualityList=fin.dataQualityIssues.map(function(issue){
+      return '<div style="margin-top:4px">• '+issue.text+'</div>';
+    }).join('');
+    dataQualityHtml='<div style="margin-bottom:14px;padding:10px 12px;border:1px solid var(--c-warning);border-radius:8px;background:#fffaf0;color:var(--c-warning);font-size:12px;line-height:1.6">'
+      +'<b>数据完整度提示：</b>报告仍按现有资料给出评分，以下数据未填写或需要确认：'
+      +qualityList
+      +'<div style="margin-top:5px;color:var(--c-text-sec)">相关指标可能受到影响，请结合以上提示理解结果。</div></div>';
+  }
 
   el.innerHTML=dataQualityHtml+'<div style="display:flex;gap:16px;margin-bottom:16px;flex-wrap:wrap">'
     +'<div style="flex:1;min-width:200px;background:'+gradeBg+';border-radius:12px;padding:20px;text-align:center">'
