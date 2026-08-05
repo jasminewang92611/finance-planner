@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>财务诊断与规划Agent · 智能财务分析与资产配置助手</title>
+<title>财务诊断Agent</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <style>
@@ -721,8 +721,8 @@ body.report-image-exporting .radar-formula{
   <div class="header-left">
     <div class="header-logo">财</div>
     <div>
-      <div class="header-title">财务诊断与规划Agent</div>
-      <div class="header-sub">家业有序 · 守正致远 · 智慧规划</div>
+      <div class="header-title">财务诊断Agent</div>
+      <div class="header-sub">了解现状 · 发现风险 · 看清方向</div>
     </div>
   </div>
   <div class="header-right">
@@ -1288,7 +1288,7 @@ body.report-image-exporting .radar-formula{
         <div class="card-body">
           <table class="alloc-table" id="allocTable">
             <thead>
-              <tr><th>资产类别</th><th>推荐区间</th><th>推荐比例</th><th>当前比例</th><th>增减建议</th></tr>
+              <tr><th>资产类别</th><th>参考区间</th><th>参考比例</th><th>当前比例</th><th>区间状态</th></tr>
             </thead>
             <tbody id="allocTableBody"></tbody>
           </table>
@@ -1327,8 +1327,8 @@ body.report-image-exporting .radar-formula{
       <!-- 理财规划综合点评 -->
       <div class="card">
         <div class="card-header">
-          <span class="card-title"><span class="card-icon">📋</span>理财规划综合点评</span>
-          <span style="font-size:11px;color:var(--c-text-sec)">基于全量数据的综合诊断与建议</span>
+          <span class="card-title"><span class="card-icon">📋</span>财务诊断</span>
+          <span style="font-size:11px;color:var(--c-text-sec)">健康程度 · 主要发现 · 改善方向 · 决策边界</span>
         </div>
         <div class="card-body">
           <div id="comprehensiveReview"></div>
@@ -2648,8 +2648,8 @@ function generateReport(){
   const monthlyDebtPay=parseFloat(document.getElementById('monthlyDebtPayment').value)||0;
 
   // 输入验证
-  if(income<=0 || totalAssets<=0){
-    showToast('请先填写收入和资产数据');
+  if(income<=0){
+    showToast('请先填写收入数据');
     return;
   }
   if(retireAge<=age){
@@ -2693,7 +2693,8 @@ function generateReport(){
 
   // 被动收入估算（投资资产 × 保守2.5%年化 / 12）
   const passiveInput=parseFloat(document.getElementById('passiveIncome')?.value)||0;
-  const passiveIncome=passiveInput>0?passiveInput:investAssets*0.025/12;
+  const passiveIncomeIsEstimated=passiveInput<=0;
+  const passiveIncome=passiveIncomeIsEstimated?investAssets*0.025/12:passiveInput;
 
   // 计算各项指标
   const sr=Engine.savingsRate(income,expense);
@@ -2706,31 +2707,28 @@ function generateReport(){
   const insurancePremiumRatio=income>0?(insuranceExpense/income*100):0;
 
   // 保险安全度（保单配置完善程度——基于家庭成员现有保单与需求对比）
-  let insuranceSafety=100;
+  let insuranceSafety=0;
   const memberSafetyScores=[];
+  let annualRaisingExpense=0;
+  document.querySelectorAll('#expenseList .line-item').forEach(item=>{
+    if(isRaisingExpenseItem(item)) annualRaisingExpense+=(parseFloat(item.querySelector('input[type=number]')?.value)||0)*12;
+  });
   familyMembers.forEach(m=>{
-    let covered=0,total=0;
-    const isSenior=m.relationship==='父母'||m.age>=55;
-    if(isSenior){
-      const hasBasicMedical=['employee','resident'].includes(m.basicMedical);
-      const reserveTarget=hasBasicMedical?200000:500000;
-      total++; if(hasBasicMedical) covered++;
-      total++; if((m.medicalReserve||0)>=reserveTarget) covered++;
-      total++; if((m.existingAccident||0)*10000>=300000) covered++;
-      if(m.isBreadwinner&&m.monthlyIncome>0){total++; if((m.existingTermLife||0)>0) covered++;}
-      memberSafetyScores.push(covered/total*100);
-      return;
+    const result=calcMemberInsurance(m,totalLiab,expense,annualRaisingExpense);
+    const components=[];
+    const coverage=(have,need)=>need>0?Math.min(1,Math.max(0,have)/need):1;
+    if(result.isSenior){
+      components.push(result.hasBasicMedical?1:0);
+      components.push(coverage(m.medicalReserve||0,result.medicalReserveTarget));
+      components.push(coverage((m.existingAccident||0)*10000,result.accidentSuggested));
+      if(result.needLife) components.push(coverage((m.existingTermLife||0)*10000,result.termLifeNeed));
+    }else{
+      if(result.needLife) components.push(coverage((m.existingTermLife||0)*10000,result.termLifeNeed));
+      components.push(coverage((m.existingCriticalIll||0)*10000,result.criticalIllSuggested));
+      components.push(m.existingMedical!=='none'?1:0);
+      components.push(coverage((m.existingAccident||0)*10000,result.accidentSuggested));
     }
-    // 定期寿险（仅经济支柱需要）
-    if(m.isBreadwinner&&m.monthlyIncome>0){total++; if(m.existingTermLife>0) covered++;}
-    // 重疾险
-    total++; if(m.existingCriticalIll>0) covered++;
-    // 医疗险
-    total++; if(m.existingMedical!=='none') covered++;
-    // 意外险
-    total++; if(m.existingAccident>0) covered++;
-    if(total>0) memberSafetyScores.push(covered/total*100);
-    else memberSafetyScores.push(100);
+    memberSafetyScores.push(components.length?components.reduce((a,b)=>a+b,0)/components.length*100:0);
   });
   insuranceSafety=memberSafetyScores.length>0?memberSafetyScores.reduce((a,b)=>a+b,0)/memberSafetyScores.length:0;
 
@@ -2789,7 +2787,7 @@ function generateReport(){
   renderInsuranceAdequacy();
 
   // 综合点评
-  renderComprehensiveReview(health,{sr,dti,liq,ir,sv,ff,ipr:insurancePremiumRatio,is:insuranceSafety},{income,expense,surplus,totalAssets,totalLiab,netWorth,investAssets,liquidAssets,age,retireAge,selectedRisk});
+  renderComprehensiveReview(health,{sr,dti,liq,ir,sv,ff,ipr:insurancePremiumRatio,is:insuranceSafety},{income,expense,surplus,totalAssets,totalLiab,netWorth,investAssets,liquidAssets,passiveIncome,passiveIncomeIsEstimated,age,retireAge,selectedRisk});
 
   // 自动保存数据
   saveData();
@@ -2828,18 +2826,18 @@ function renderAllocTable(alloc,investAmount){
     const curPct=curTotal>0?(curVal/curTotal*100):0;
     const [minPct,maxPct]=a.range.split('-').map(s=>parseFloat(s));
 
-    // 增减建议
+    // 只提示与参考区间的关系，不给出买卖指令
     let adviceText,adviceColor,adviceIcon;
     if(curTotal===0){
       adviceText='暂无资产数据';adviceColor='var(--c-text-sec)';adviceIcon='•';
     }else if(curPct<minPct){
       const gap=minPct-curPct;
-      adviceText=`建议增持 ${gap.toFixed(1)}%`;adviceColor='var(--c-danger)';adviceIcon='↑';
+      adviceText=`低于参考区间 ${gap.toFixed(1)}%`;adviceColor='var(--c-danger)';adviceIcon='↓';
     }else if(curPct>maxPct){
       const gap=curPct-maxPct;
-      adviceText=`建议减持 ${gap.toFixed(1)}%`;adviceColor='var(--c-warning)';adviceIcon='↓';
+      adviceText=`高于参考区间 ${gap.toFixed(1)}%`;adviceColor='var(--c-warning)';adviceIcon='↑';
     }else{
-      adviceText='比例合理';adviceColor='var(--c-success)';adviceIcon='✓';
+      adviceText='处于参考区间';adviceColor='var(--c-success)';adviceIcon='✓';
     }
 
     const displayName = k === '大宗商品' ? '大宗商品(黄金等)' : k === '长债' ? '长债（储蓄型保险等）' : k === '股票(权益类)' ? '股票/基金类' : k;
@@ -2855,7 +2853,8 @@ function renderAllocTable(alloc,investAmount){
   // 全天候配置说明
   const note=document.getElementById('allocNote');
   if(note){
-    note.innerHTML=`<div style="padding:10px 12px;background:var(--c-bg);border-radius:6px;font-size:12px;color:var(--c-text-sec);line-height:1.6">
+    const emptyNote=curTotal===0?'<div style="margin-bottom:8px;padding:8px 10px;background:#fffaf0;border:1px solid var(--c-accent);border-radius:6px;color:var(--c-accent);font-weight:600">当前暂无可分析的投资资产，以下比例仅作为资产结构教育参考。</div>':'';
+    note.innerHTML=emptyNote+`<div style="padding:10px 12px;background:var(--c-bg);border-radius:6px;font-size:12px;color:var(--c-text-sec);line-height:1.6">
       💡 <b>推荐比例</b>严格对应第 1 步选择的风险偏好：保守型为现金20% / 长债40% / 股票基金30% / 大宗商品10%；平衡型为现金20% / 长债30% / 股票基金40% / 大宗商品10%；进取型为现金10% / 长债30% / 股票基金40% / 大宗商品20%。<br><b>当前比例</b>根据资产明细自动计算：股票/基金和投资性房产归入权益类；黄金归入大宗商品；银行存款归入现金短债；理财型保险归入稳健类（长债）。自住房产及其他资产不计入投资组合。
     </div>`;
   }
@@ -3041,17 +3040,9 @@ function renderAllWeatherPhilosophy(alloc,investAmount){
       </div>
 
       <div style="border:1px solid var(--c-accent);border-radius:10px;padding:16px;background:#fffbeb">
-        <div style="font-weight:600;font-size:13px;margin-bottom:10px;color:var(--c-primary)">📌 具体操作示例</div>
+        <div style="font-weight:600;font-size:13px;margin-bottom:8px;color:var(--c-primary)">📌 原理示例</div>
         <div style="font-size:13px;line-height:1.7">
-          假设初始配置：大宗商品占比 <b>20%</b>。一年后，黄金大涨，大宗商品实际占比升至 <b>30%</b>。
-          <div style="margin:10px 0;padding:10px 12px;background:#fff;border-radius:6px;border-left:3px solid var(--c-accent)">
-            <b>操作：</b>卖出占总资产 <b>10%</b> 的大宗商品（把涨的部分兑现），<br>
-            <b>同时</b>用这笔钱买入占比低于目标的资产（比如股票从35%跌到了30%，就补仓5%），<br>
-            <b>结果：</b>所有资产回到初始比例，自动完成"卖高买低"。
-          </div>
-          <div style="font-size:12px;color:var(--c-text-sec);margin-top:6px">
-            💡 每个季度末操作一次（3月/6月/9月/12月底），或每年底操作一次。操作频率不宜太高，避免交易成本侵蚀收益。
-          </div>
+          当某类资产上涨后，其在组合中的占比会自然升高；其他资产的相对占比则会下降。再平衡的核心，是让组合重新接近原先设定的风险结构，从而避免风险在不知不觉中过度集中。这里说明的是组合管理原理，不代表任何具体买卖建议。
         </div>
       </div>
     </div>
@@ -3110,18 +3101,11 @@ function renderAllWeatherPhilosophy(alloc,investAmount){
       </div>
     </div>
 
-    <!-- ====== 第七部分：实操建议 ====== -->
+    <!-- ====== 第七部分：教育内容边界 ====== -->
     <div style="background:linear-gradient(135deg,var(--c-primary) 0%,var(--c-primary-light) 100%);color:#fff;border-radius:10px;padding:18px">
-      <div style="font-size:15px;font-weight:700;margin-bottom:10px">🛠️ 实操建议：如何开始？</div>
-      <div style="font-size:13px;line-height:1.9">
-        <div style="margin-bottom:6px"><b>第一步：</b>开通证券账户，选择4-5只低费率ETF（每类资产1-2只即可）</div>
-        <div style="margin-bottom:6px"><b>第二步：</b>按建议比例一次性买入（或分2-3个月逐步建仓）</div>
-        <div style="margin-bottom:6px"><b>第三步：</b>每季度末（或每年底）检查一次实际占比，卖出超配的、买入低配的</div>
-        <div style="margin-bottom:6px"><b>第四步：</b>需要用钱时，按比例从各类资产中卖出即可</div>
-        <div style="margin-bottom:6px"><b>投资纪律：</b>投资资金应以闲置资金为限，<b>不使用消费贷、信用卡套现或高杠杆融资投资</b>；杠杆会同时放大收益、亏损及被迫卖出的风险。</div>
-        <div style="margin-top:10px;padding:8px 12px;background:rgba(201,168,76,.25);border-radius:6px;font-size:12px">
-          📌 <b>关键原则：</b>少操作、不择时、不预测、纪律化执行。这个策略简单到可以吃一辈子，也确实应该讲给你的孩子听。
-        </div>
+      <div style="font-size:15px;font-weight:700;margin-bottom:8px">📚 内容说明</div>
+      <div style="font-size:13px;line-height:1.8;opacity:.92">
+        本页用于解释分散配置、经济周期与再平衡等基础概念，帮助理解不同资产在组合中的作用；不构成针对个人的买卖指令，也不涉及具体产品推荐。是否投资、如何配置及采用何种工具，请结合自身目标、期限和风险承受能力独立判断。
       </div>
     </div>
   `;
@@ -3631,10 +3615,19 @@ function renderGoalAnalysis(investAssets,surplus){
     var months=g.years*12;
     var gap=Math.max(0,g.amount-allocP);
     var required=months>0?gap/months:gap;
-    var canAfford=allocS>=required;
-
-    var status=canAfford?'<span style="color:var(--c-success);font-weight:600">\u2713 \u53EF\u8FBE\u6210</span>':
-      '<span style="color:var(--c-danger);font-weight:600">\u26A0 \u9700\u8C03\u6574</span>';
+    var hasEnoughData=g.amount>0&&g.years>0&&Number.isFinite(required);
+    var canAfford=hasEnoughData&&allocS>=required;
+    var fundingRatio=required>0?allocS/required:1;
+    var status='';
+    if(!hasEnoughData){
+      status='<span style="color:var(--c-text-sec);font-weight:600">— 数据不足，暂无法判断</span>';
+    }else if(canAfford){
+      status='<span style="color:var(--c-success);font-weight:600">✓ 当前条件下较可行</span>';
+    }else if(fundingRatio>=0.5){
+      status='<span style="color:var(--c-warning);font-weight:600">⚠ 当前条件下存在压力</span>';
+    }else{
+      status='<span style="color:var(--c-danger);font-weight:600">⚠ 需要进一步调整</span>';
+    }
 
     var principalNote=allocP>g.amount?'<br><span style="font-size:10px;color:var(--c-success)">已足额，余\u00A5'+fmt(allocP-g.amount)+'流向其他目标</span>':'';
     var shortfall=required>allocS?'<br><span style="font-size:10px;color:var(--c-danger)">月差\u00A5'+fmtFull(Math.max(0,required-allocS))+'</span>':'';
@@ -3644,7 +3637,7 @@ function renderGoalAnalysis(investAssets,surplus){
       +'<td data-label="优先级"><span style="font-weight:700;color:'+priorityColor[item.priority]+'">'+priorityLabel[item.priority]+'</span><br><span style="font-size:10px;color:var(--c-text-sec)">分摊本金\u00A5'+fmt(allocP)+'</span>'+principalNote+'</td>'
       +'<td data-label="期限">'+(g.type==='short'?'\u77ED\u671F':g.type==='mid'?'\u4E2D\u671F':'\u957F\u671F')+'('+g.years+'\u5E74)</td>'
       +'<td data-label="目标金额">\u00A5'+fmt(g.amount)+'</td>'
-      +'<td data-label="所需月投" style="font-weight:600;color:'+(canAfford?'var(--c-success)':'var(--c-danger)')+'" >\u00A5'+fmtFull(required)+'/\u6708'+shortfall+'</td>'
+      +'<td data-label="所需月投" style="font-weight:600;color:'+(canAfford?'var(--c-success)':'var(--c-danger)')+'" >'+(hasEnoughData?'\u00A5'+fmtFull(required)+'/\u6708'+shortfall:'—')+'</td>'
       +'<td data-label="状态">'+status+'</td>'
       +'</tr>';
   });
@@ -3658,7 +3651,7 @@ function renderGoalAnalysis(investAssets,surplus){
       +'</td></tr>';
   }
 
-  body.innerHTML=headerRow+rows.join('');
+  body.innerHTML=headerRow+rows.join('')+'<tr><td colspan="6" style="padding:8px 12px;font-size:11px;color:var(--c-text-sec);background:var(--c-bg)">判断基于当前录入数据和既定假设，仅反映当前条件下的大致可行程度，不代表目标一定能够实现。</td></tr>';
 }
 
 /* ---- 理财规划综合点评 ---- */
@@ -3691,32 +3684,29 @@ function renderComprehensiveReview(health,metrics,fin){
 
   var assessment='';
   if(score>=80){
-    assessment='整体财务状况优秀，月收入'+inc+'、月结余'+sur+'，储蓄率'+s+'%处于健康水平。净资产'+nw+'，资产负债结构合理。建议在保持现有良好习惯的基础上，持续优化资产配置，向财务自由迈进。';
+    assessment='整体财务状况优秀，月收入'+inc+'、月结余'+sur+'，储蓄率'+s+'%处于健康水平。净资产'+nw+'，资产负债结构合理。后续可继续关注资产配置与长期目标之间的匹配程度。';
   }else if(score>=60){
     var riskNames=risks.length>0?risks.map(function(r){return r.name;}).join('、'):'';
-    assessment='整体财务状况良好但仍有提升空间。月结余'+sur+'（储蓄率'+s+'%），'+(risks.length>0?'需重点关注'+riskNames+'等'+risks.length+'项指标。':'')+'建议在巩固优势的同时，针对性地补齐短板，提升整体财务韧性。';
+    assessment='整体财务状况良好但仍有提升空间。月结余'+sur+'（储蓄率'+s+'%），'+(risks.length>0?'可重点关注'+riskNames+'等'+risks.length+'项指标。':'')+'在保持现有优势的同时，可根据自身情况逐步改善相对薄弱的环节。';
   }else if(score>=40){
     var surplusMsg=fin.surplus>0?'月结余'+sur+'。':'月度收支基本持平或入不敷出。';
     var riskMsg2=risks.length>0?risks.length+'项指标未达   （'+risks.map(function(r){return r.name;}).join('、')+'），':'';
-    assessment='整体财务状况需改善。当前月收入'+inc+'、月支出'+exp+'，'+surplusMsg+riskMsg2+'建议优先解决保障缺口和流动性问题，逐步建立健康的财务结构。';
+    assessment='整体财务状况存在一定改善空间。当前月收入'+inc+'、月支出'+exp+'，'+surplusMsg+riskMsg2+'保障与流动性可作为后续优先关注的方向。';
   }else{
-    var urgentMsg=fin.surplus<=0?'月度入不敷出，需立即削减非必要支出或增加收入来源。':'储蓄率仅'+s+'%，低于健康水平。';
+    var urgentMsg=fin.surplus<=0?'月度收支存在缺口，现金流平衡值得优先关注。':'储蓄率仅'+s+'%，低于健康水平。';
     var isMsg=metrics.is<40?'家庭保障严重不足，':'';
     var liqMsg=metrics.liq<3?'流动性紧张，':'';
-    assessment='整体财务状况亟需改善。'+urgentMsg+' '+isMsg+liqMsg+'建议从紧急备用金、基础保障、债务管理三个方向同步着手，尽快建立财务安全底线。';
+    assessment='整体财务状况的安全缓冲相对不足。'+urgentMsg+' '+isMsg+liqMsg+'可优先了解紧急备用金、基础保障与债务管理等改善方向。';
   }
 
   var actions=[];
-  var emergencyTarget=fin.expense*3;
-  var emergencyGap=Math.max(0,emergencyTarget-fin.liquidAssets);
-  var savingTarget=Math.max(0,fin.income*0.2);
-  if(fin.surplus<=0) actions.push({level:'立即',title:'先止住月度现金流缺口',action:'逐项核对支出，先暂停非必要消费，并确定可执行的增收方案。',standard:'月结余由 ¥'+fmt(fin.surplus)+' 提升至至少 ¥0，连续保持2个月。',time:'7天内制定，30天内复盘'});
-  if(metrics.liq<3) actions.push({level:'优先',title:'补足最低应急备用金',action:'将每月结余优先转入独立的高流动性账户，暂缓非刚性长期投资。',standard:'流动资产达到3个月支出，即 ¥'+fmt(emergencyTarget)+'；当前还差约 ¥'+fmt(emergencyGap)+'。',time:'本周开始，每月检查'});
-  if(metrics.is<60) actions.push({level:'优先',title:'完成家庭保障缺口核对',action:'按家庭成员逐一核对医保、医疗险、重疾险、意外险和经济支柱定期寿险，先补基础保障，再考虑储蓄型保险。',standard:'报告中的成员保障缺口逐项确认，保险安全度由 '+isVal+'% 提升至60%以上。',time:'30天内完成核对'});
-  if(metrics.dti>36) actions.push({level:'优先',title:'降低偿债压力',action:'列出每笔负债利率与剩余期限，优先处理高成本负债，并评估提前还款或重组。',standard:'月度偿债比例由 '+d+'% 降至36%以下。',time:'30天内形成还款顺序'});
-  if(metrics.sr<20&&fin.surplus>0) actions.push({level:'随后',title:'建立“先存后花”机制',action:'发薪后自动转入目标账户，不使用月末剩余金额作为储蓄标准。',standard:'每月储蓄达到约 ¥'+fmt(savingTarget)+'，储蓄率由 '+s+'% 提升至20%以上并保持3个月。',time:'下个发薪日开始'});
-  if(metrics.ir<30&&metrics.liq>=3&&fin.surplus>0) actions.push({level:'随后',title:'按目标配置长期投资资金',action:'保留应急金后，将可长期不用的结余按风险偏好分批投入，并设置年度再平衡。',standard:'形成书面目标比例和每月投入金额；投资资产占比由 '+ir+'% 逐步接近30%以上。',time:'60—90天内启动'});
-  if(actions.length===0) actions.push({level:'保持',title:'建立季度复盘制度',action:'核对实际收支、净资产、保险变化及目标进度，偏离计划时及时调整。',standard:'每季度完成一次数据更新，每年完成一次完整财务诊断。',time:'每季度末'});
+  if(fin.surplus<=0) actions.push({level:'重点关注',title:'改善现金流',direction:'梳理收支缺口，重点关注非必要支出和收入稳定性。',target:'参考目标：月结余不低于0。'});
+  if(metrics.liq<3) actions.push({level:'重点关注',title:'建立应急缓冲',direction:'逐步增加高流动性资金，应对医疗、失业等突发支出。',target:'参考目标：流动资金达到至少3个月支出。'});
+  if(metrics.is<60) actions.push({level:'重点关注',title:'核对保障缺口',direction:'了解现有保障与主要风险之间的差距。',target:'参考目标：保险安全度达到60%以上。'});
+  if(metrics.dti>36) actions.push({level:'重点关注',title:'缓解债务压力',direction:'梳理负债成本、期限和月供，重点关注高成本负债。',target:'参考目标：月度偿债比例降至36%以下。'});
+  if(metrics.sr<20&&fin.surplus>0) actions.push({level:'建议关注',title:'稳定持续储蓄',direction:'保持稳定结余，为应急和中长期目标持续积累。',target:'参考目标：储蓄率逐步达到20%以上。'});
+  if(metrics.ir<30&&metrics.liq>=3&&fin.surplus>0) actions.push({level:'持续观察',title:'观察长期配置',direction:'关注长期资产结构与风险承受能力、资金期限是否匹配。',target:'参考目标：投资资产占比逐步接近30%以上。'});
+  if(actions.length===0) actions.push({level:'保持',title:'定期回看',direction:'关注收支、资产负债、保障和目标是否发生明显变化。',target:'参考频率：每季度回看一次。'});
   actions=actions.slice(0,5);
 
   var freedomTarget=fin.expense*12/0.04;
@@ -3741,32 +3731,37 @@ function renderComprehensiveReview(health,metrics,fin){
   }
 
   var actionsHtml=actions.map(function(a,i){
-    var levelColor=a.level==='立即'?'var(--c-danger)':a.level==='优先'?'var(--c-warning)':a.level==='随后'?'var(--c-accent)':'var(--c-success)';
-    return '<div class="action-plan-item" style="display:grid;grid-template-columns:32px minmax(0,1fr);gap:10px;padding:12px 0;'+(i?'border-top:1px solid var(--c-border)':'')+'">'
-      +'<div class="action-plan-num" style="width:28px;height:28px;border-radius:50%;background:'+levelColor+';color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700">'+(i+1)+'</div>'
-      +'<div><div class="action-plan-title" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:5px"><b style="font-size:13px;color:var(--c-primary)">'+a.title+'</b><span style="font-size:10px;padding:2px 7px;border-radius:10px;background:'+levelColor+';color:#fff">'+a.level+'</span><span style="font-size:10px;color:var(--c-text-sec)">建议时限：'+a.time+'</span></div>'
-      +'<div class="action-plan-detail" style="font-size:12px;line-height:1.6;color:var(--c-text-sec)"><b>具体动作：</b>'+a.action+'</div>'
-      +'<div class="action-plan-detail" style="font-size:12px;line-height:1.6;color:var(--c-text-sec)"><b>完成标准：</b>'+a.standard+'</div></div></div>';
+    var levelColor=a.level==='重点关注'?'var(--c-warning)':a.level==='建议关注'?'var(--c-accent)':a.level==='持续观察'?'var(--c-info)':'var(--c-success)';
+    return '<div class="action-plan-item" style="display:grid;grid-template-columns:28px minmax(0,1fr);gap:10px;padding:10px 0;'+(i?'border-top:1px solid var(--c-border)':'')+'">'
+      +'<div class="action-plan-num" style="width:24px;height:24px;border-radius:50%;background:'+levelColor+';color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700">'+(i+1)+'</div>'
+      +'<div><div class="action-plan-title" style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-bottom:3px"><b style="font-size:13px;color:var(--c-primary)">'+a.title+'</b><span style="font-size:10px;padding:1px 7px;border-radius:10px;background:'+levelColor+';color:#fff">'+a.level+'</span></div>'
+      +'<div class="action-plan-detail" style="font-size:12px;line-height:1.55;color:var(--c-text-sec)">'+a.direction+'</div>'
+      +'<div style="font-size:11px;line-height:1.5;color:'+levelColor+';font-weight:600;margin-top:2px">'+a.target+'</div></div></div>';
   }).join('');
 
-  var fpMsg=freedomProgress>0?'（已积累投资资产<span class="sensitive-financial">¥'+ia+'</span>）':'<br><span style="font-size:12px;color:var(--c-accent)">💡 当前暂无被动收入。建议从指数基金定投（如沪深300）或货币基金开始，每月固定投入，逐步建立被动收入来源。</span>';
+  var fpMsg=freedomProgress>0?'（已积累投资资产<span class="sensitive-financial">¥'+ia+'</span>）':'<br><span style="font-size:12px;color:var(--c-accent)">💡 当前暂未形成明显的被动收入来源，可将长期资产积累作为后续关注方向。</span>';
   var yearsToFree=calcYearsToFreedom(fin.investAssets,fin.expense,fin.surplus);
-  var yearsMsg=fin.investAssets>0?'预计'+yearsToFree+'年达到财务自由':'';
+  var yearsMsg=fin.investAssets>0?'按当前数据及3.5%年化假设测算，约'+yearsToFree+'年后可能接近当前定义下的财务自由目标':'';
+  var passiveIncomeNote=fin.passiveIncomeIsEstimated
+    ?'被动收入口径：未填写实际被动收入，系统按投资资产×2.5%/年估算为 <span class="sensitive-financial">¥'+fmt(fin.passiveIncome)+'/月</span>。'
+    :'被动收入口径：采用用户填写的实际被动收入 <span class="sensitive-financial">¥'+fmt(fin.passiveIncome)+'/月</span>。';
 
   el.innerHTML='<div style="display:flex;gap:16px;margin-bottom:16px;flex-wrap:wrap">'
     +'<div style="flex:1;min-width:200px;background:'+gradeBg+';border-radius:12px;padding:20px;text-align:center">'
-    +'<div style="font-size:13px;color:var(--c-text-sec);margin-bottom:6px">综合财务健康评分</div>'
+    +'<div style="font-size:13px;color:var(--c-text-sec);margin-bottom:6px">一、健康程度</div>'
     +'<div style="font-size:42px;font-weight:800;color:'+gradeColor+';line-height:1">'+score+'</div>'
     +'<div style="font-size:14px;font-weight:700;color:'+gradeColor+';margin-top:6px">'+grade+'</div>'
-    +'<div style="font-size:11px;color:var(--c-text-sec);margin-top:4px">满分100 \u00B7 三大类8项指标</div>'
+    +'<div style="font-size:11px;color:var(--c-text-sec);margin-top:4px">满分100 \u00B7 三大类7项指标</div>'
     +'</div>'
     +'<div style="flex:2;min-width:300px">'
-    +'<div style="font-size:14px;font-weight:700;color:var(--c-primary);margin-bottom:8px">综合诊断</div>'
+    +'<div style="font-size:14px;font-weight:700;color:var(--c-primary);margin-bottom:8px">总体诊断</div>'
     +'<div class="comprehensive-assessment" style="font-size:13px;line-height:1.7;color:var(--c-text-sec)">'+assessment+'</div>'
     +'<div class="freedom-summary" style="margin-top:10px;font-size:12px;color:var(--c-text-sec)">'
     +'财务自由目标：<span class="sensitive-financial">¥'+fmt(freedomTarget)+'</span> \u00B7 当前进度：<span class="freedom-progress" style="font-weight:600;color:var(--c-accent)">'+freedomProgress.toFixed(1)+'%</span>'+fpMsg
     +(yearsMsg?'<br>'+yearsMsg:'')
+    +'<br><span style="font-size:11px">'+passiveIncomeNote+'</span>'
     +'</div></div></div>'
+    +'<div style="font-size:14px;font-weight:700;color:var(--c-primary);margin-bottom:10px">二、主要发现</div>'
     +'<div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:16px">'
     +'<div style="flex:1;min-width:280px">'
     +'<div style="font-size:14px;font-weight:700;color:var(--c-success);margin-bottom:10px">表现良好的维度（'+strengths.length+'项）</div>'
@@ -3777,9 +3772,13 @@ function renderComprehensiveReview(health,metrics,fin){
     +risksHtml
     +'</div></div>'
     +'<div class="comprehensive-actions" style="background:#f7fafc;border-radius:10px;padding:16px">'
-    +'<div style="font-size:14px;font-weight:700;color:var(--c-primary)">下一步行动清单</div>'
-    +'<div style="font-size:11px;color:var(--c-text-sec);margin-top:3px;margin-bottom:8px">建议按顺序执行；每项都包含动作、完成标准与复盘时限。</div>'
+    +'<div style="font-size:14px;font-weight:700;color:var(--c-primary)">三、建议关注方向</div>'
+    +'<div style="font-size:11px;color:var(--c-text-sec);margin-top:3px;margin-bottom:6px">仅提示优先关注方向，不构成具体方案。</div>'
     +actionsHtml
+    +'</div>'
+    +'<div class="decision-boundary" style="margin-top:16px;padding:14px 16px;border:1px solid var(--c-border);border-left:4px solid var(--c-accent);border-radius:8px;background:#fffaf0">'
+    +'<div style="font-size:14px;font-weight:700;color:var(--c-primary);margin-bottom:6px">四、决策边界</div>'
+    +'<div style="font-size:12px;line-height:1.75;color:var(--c-text-sec)">本诊断用于帮助您了解家庭财务的大致健康程度、主要风险与可关注方向，不推荐具体保险、基金或其他金融产品，不替代您作出财务决策，也不对未来结果作出保证。是否行动、何时行动以及采用何种方式，请结合自身情况独立判断；如涉及投资、保险、税务或法律问题，可自行向相应领域的专业人士进一步了解。</div>'
     +'</div>';
 }
 
