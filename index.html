@@ -1357,6 +1357,7 @@ body.report-image-exporting .radar-formula{
       <div class="btn-row">
         <button class="btn btn-ghost" onclick="goStep(5)">← 修改规划</button>
         <button class="btn btn-accent" onclick="saveReportAsLongImage()">导出财务分析图</button>
+        <button class="btn btn-primary" onclick="saveReportAsLongImage(true)">导出脱敏信息卡片</button>
         <div class="pdf-export-group">
           <button class="btn btn-ghost" onclick="printReport()">打印 / 保存 PDF</button>
           <span class="wechat-pdf-note">微信打开不适用；如需 PDF 版本，请跳转浏览器后重新输入数据。</span>
@@ -1862,7 +1863,102 @@ function checkForUpdate(){
   },350);
 }
 
-async function saveReportAsLongImage(){
+function maskSensitiveText(root, mode){
+  if(!root) return;
+  const walker=root.ownerDocument.createTreeWalker(root,NodeFilter.SHOW_TEXT);
+  const nodes=[];
+  while(walker.nextNode()) nodes.push(walker.currentNode);
+  nodes.forEach(function(node){
+    const parent=node.parentElement;
+    if(!parent||['SCRIPT','STYLE'].includes(parent.tagName)) return;
+    let text=node.nodeValue;
+    if(mode==='all-numbers'){
+      text=text.replace(/(?:[¥￥]\s*)?[+-]?[\d,.]+(?:\s*(?:万|元|%|个月|月|年))?/g,'***');
+    }else if(mode==='amounts-only'){
+      text=text.replace(/[¥￥]\s*[+-]?[\d,.]+(?:\s*万)?/g,'***');
+    }else if(mode==='diagnostic'){
+      text=text
+        .replace(/[¥￥]\s*[+-]?[\d,.]+(?:\s*万)?/g,'***')
+        .replace(/((?:月收入|月支出|月结余|净资产|投资资产|流动资产|备用金|金额|缺口)[：约为达还差至由\s]*)[+-]?[\d,.]+(?:\s*万)?/g,'$1***');
+    }else{
+      text=text
+        .replace(/[¥￥]\s*[+-]?[\d,.]+(?:\s*万)?/g,'***')
+        .replace(/[+-]?[\d,.]+\s*万/g,'***')
+        .replace(/[+-]?[\d,.]+\s*(?=%|个月|元(?:\/月)?)/g,'***');
+    }
+    node.nodeValue=text;
+  });
+}
+
+function sanitizeReportClone(doc){
+  const step=doc.getElementById('step6');
+  if(!step) return;
+  step.classList.add('privacy-safe-export');
+
+  // The two source-data tables are intentionally absent from the shareable card.
+  const balance=doc.getElementById('balanceSheetTable');
+  const sourceTables=balance&&balance.closest('.chart-row');
+  if(sourceTables) sourceTables.style.display='none';
+
+  const header=doc.getElementById('reportHeader');
+  if(header){
+    const name=doc.getElementById('reportClientName');
+    if(name) name.textContent='客户';
+    maskSensitiveText(header,'financial');
+  }
+
+  // Keep the public methodology note intact. Member identity, income, coverage
+  // and gaps are private; only the diagnosis/status remains readable.
+  const insurance=doc.getElementById('insuranceAdequacy');
+  if(insurance){
+    Array.from(insurance.children).filter(function(el){return !el.classList.contains('insurance-standard-note');}).forEach(function(card,index){
+      maskSensitiveText(card,'all-numbers');
+      const memberTitle=card.querySelector(':scope > div:first-child > div:first-child');
+      if(memberTitle) memberTitle.textContent='家庭成员 '+(index+1);
+    });
+  }
+
+  // Recommended/current allocation ratios are analysis results and remain visible.
+
+  // Straw-hat chart values are masked in the live canvas before capture; its
+  // explanatory copy is also stripped of all customer-related figures.
+  maskSensitiveText(doc.getElementById('strawHatNote'),'amounts-only');
+
+  // Goal name/priority/term/status remain useful. Amount and monthly funding do not.
+  const goalTable=doc.getElementById('goalTable');
+  if(goalTable){
+    goalTable.querySelectorAll('tr').forEach(function(row){
+      const cells=row.children;
+      if(cells.length>=6){
+        cells[3].textContent='***';
+        cells[4].textContent='***';
+        maskSensitiveText(cells[1],'financial');
+      }else if(cells.length===1){
+        maskSensitiveText(cells[0],'financial');
+      }
+    });
+  }
+
+  // Diagnostic ratios and scores are safe to share. Only narrative amounts,
+  // action-plan amounts and the financial-freedom target are masked.
+  const review=doc.getElementById('comprehensiveReview');
+  if(review){
+    review.querySelectorAll('.sensitive-financial').forEach(function(el){el.textContent='***';});
+    review.querySelectorAll('.comprehensive-assessment,.comprehensive-actions').forEach(function(el){maskSensitiveText(el,'diagnostic');});
+  }
+
+  const privacyNote=doc.createElement('div');
+  privacyNote.style.cssText='margin:0 0 16px;padding:10px 14px;border:1px solid #d8c79d;border-radius:8px;background:#fffaf0;color:#7a5a20;font-size:12px;text-align:center';
+  privacyNote.textContent='隐私安全分享版｜客户身份、资产负债、收支、保额及其他财务数字均已隐藏';
+  // insertBefore requires the anchor to be a direct child of step. The first
+  // report card is nested in .chart-row, so using it directly throws a
+  // NotFoundError inside html2canvas' cloned document.
+  const anchor=sourceTables&&sourceTables.parentElement===step?sourceTables:step.firstElementChild;
+  if(anchor) step.insertBefore(privacyNote,anchor);
+  else step.appendChild(privacyNote);
+}
+
+async function saveReportAsLongImage(privacySafe){
   if(typeof html2canvas!=='function'){showToast('长图组件加载失败，请检查网络后重试');return;}
   generateReport();
   if(charts.radar) charts.radar.update('none');
@@ -1873,7 +1969,7 @@ async function saveReportAsLongImage(){
   const hint=document.getElementById('reportImageHint');
   const isWeChat=/MicroMessenger/i.test(navigator.userAgent||'');
   preview.hidden=true; preview.removeAttribute('src'); loading.style.display='block';
-  hint.textContent=isWeChat?'请长按下方图片，选择“保存图片”。':'图片会自动下载，也可以长按或右键保存。';
+  hint.textContent=isWeChat?'请长按下方图片，选择“保存图片”。':(privacySafe?'脱敏卡片会自动下载，也可以长按或右键保存。':'图片会自动下载，也可以长按或右键保存。');
   modal.classList.add('show'); document.body.style.overflow='hidden';
   const report=document.getElementById('step6');
   const exportWidth=900;
@@ -1888,6 +1984,7 @@ async function saveReportAsLongImage(){
     const roiWrap=document.querySelector('#roiChart')?.parentElement;
     if(roiWrap) roiWrap.style.height=roiChartHeight+'px';
     document.body.classList.add('report-image-exporting');
+    if(privacySafe) document.body.classList.add('privacy-safe-exporting');
     if(charts.radar) charts.radar.resize();
     if(charts.roi){
       charts.roi.options.plugins.legend.labels.font.size=14;
@@ -1902,6 +1999,7 @@ async function saveReportAsLongImage(){
       windowWidth:Math.max(report.scrollWidth,exportWidth),
       onclone:function(doc){
         doc.querySelectorAll('#step6 .btn-row,[data-html2canvas-ignore="true"]').forEach(el=>el.style.display='none');
+        if(privacySafe) sanitizeReportClone(doc);
         const clonedStep=doc.getElementById('step6');
         clonedStep.style.display='block';clonedStep.style.opacity='1';clonedStep.style.animation='none';
       }
@@ -1910,7 +2008,7 @@ async function saveReportAsLongImage(){
     preview.src=imageUrl;preview.hidden=false;loading.style.display='none';
     if(!isWeChat){
       const client=(document.getElementById('reportClientName').textContent||'客户').replace(/[\\/:*?"<>|]/g,'_');
-      const link=document.createElement('a');link.href=imageUrl;link.download=client+'的财务分析报告.jpg';link.click();
+      const link=document.createElement('a');link.href=imageUrl;link.download=privacySafe?'脱敏财务信息卡片.jpg':client+'的财务分析报告.jpg';link.click();
     }
   }catch(error){
     console.error(error);closeReportImageModal();showToast('长图生成失败，请稍后重试或使用 PDF 导出');
@@ -1920,6 +2018,7 @@ async function saveReportAsLongImage(){
     const roiWrap=document.querySelector('#roiChart')?.parentElement;
     if(roiWrap) roiWrap.style.height='';
     document.body.classList.remove('report-image-exporting');
+    document.body.classList.remove('privacy-safe-exporting');
     if(charts.radar) charts.radar.resize();
     if(charts.roi){
       charts.roi.options.plugins.legend.labels.font.size=12;
@@ -3169,7 +3268,7 @@ function renderInsuranceAdequacy(){
 
   // 底部说明
   html+=`
-    <div style="padding:12px 14px;background:linear-gradient(135deg,var(--c-primary) 0%,var(--c-primary-light) 100%);color:#fff;border-radius:10px;font-size:12px;line-height:1.7">
+    <div class="insurance-standard-note" style="padding:12px 14px;background:linear-gradient(135deg,var(--c-primary) 0%,var(--c-primary-light) 100%);color:#fff;border-radius:10px;font-size:12px;line-height:1.7">
       <div style="font-weight:700;margin-bottom:6px">📋 保额标准说明</div>
       <div>• <b>重疾险</b>：成人建议 ≥ 5倍年收入，未成年人最低30万</div>
       <div>• <b>定期寿险</b>：经济支柱建议 ≥ 剩余贷款 + 20年养育/赡养支出</div>
@@ -3443,7 +3542,7 @@ function renderROIChart(principal,monthlyContribution,workYears,currentAge,retir
         tooltip:{callbacks:{label:(ctx)=>ctx.dataset.label+': ¥'+fmt(ctx.parsed.y||0)}}
       },
       scales:{
-        y:{ticks:{callback:v=>'¥'+fmt(v)},grid:{color:'#f0f0f0'}},
+        y:{ticks:{callback:v=>document.body.classList.contains('privacy-safe-exporting')?'***':'¥'+fmt(v)},grid:{color:'#f0f0f0'}},
         x:{grid:{display:false},ticks:{maxTicksLimit:12}}
       }
     },
@@ -3467,7 +3566,7 @@ function renderROIChart(principal,monthlyContribution,workYears,currentAge,retir
           if(point){
             var x=point.x;
             var y=point.y;
-            var label='\u00A5'+fmt(a.value);
+            var label=document.body.classList.contains('privacy-safe-exporting')?'***':'\u00A5'+fmt(a.value);
             var isAccum=a.index<=workYears;
             ctx.fillStyle=isAccum?'rgba(173,136,72,.92)':'rgba(168,50,50,.86)';
             var w=ctx.measureText(label).width+10;
@@ -3650,7 +3749,7 @@ function renderComprehensiveReview(health,metrics,fin){
       +'<div class="action-plan-detail" style="font-size:12px;line-height:1.6;color:var(--c-text-sec)"><b>完成标准：</b>'+a.standard+'</div></div></div>';
   }).join('');
 
-  var fpMsg=freedomProgress>0?'（已积累投资资产'+ia+'）':'<br><span style="font-size:12px;color:var(--c-accent)">💡 当前暂无被动收入。建议从指数基金定投（如沪深300）或货币基金开始，每月固定投入，逐步建立被动收入来源。</span>';
+  var fpMsg=freedomProgress>0?'（已积累投资资产<span class="sensitive-financial">¥'+ia+'</span>）':'<br><span style="font-size:12px;color:var(--c-accent)">💡 当前暂无被动收入。建议从指数基金定投（如沪深300）或货币基金开始，每月固定投入，逐步建立被动收入来源。</span>';
   var yearsToFree=calcYearsToFreedom(fin.investAssets,fin.expense,fin.surplus);
   var yearsMsg=fin.investAssets>0?'预计'+yearsToFree+'年达到财务自由':'';
 
@@ -3663,9 +3762,9 @@ function renderComprehensiveReview(health,metrics,fin){
     +'</div>'
     +'<div style="flex:2;min-width:300px">'
     +'<div style="font-size:14px;font-weight:700;color:var(--c-primary);margin-bottom:8px">综合诊断</div>'
-    +'<div style="font-size:13px;line-height:1.7;color:var(--c-text-sec)">'+assessment+'</div>'
-    +'<div style="margin-top:10px;font-size:12px;color:var(--c-text-sec)">'
-    +'财务自由目标：'+fmt(freedomTarget)+' \u00B7 当前进度：<span style="font-weight:600;color:var(--c-accent)">'+freedomProgress.toFixed(1)+'%</span>'+fpMsg
+    +'<div class="comprehensive-assessment" style="font-size:13px;line-height:1.7;color:var(--c-text-sec)">'+assessment+'</div>'
+    +'<div class="freedom-summary" style="margin-top:10px;font-size:12px;color:var(--c-text-sec)">'
+    +'财务自由目标：<span class="sensitive-financial">¥'+fmt(freedomTarget)+'</span> \u00B7 当前进度：<span class="freedom-progress" style="font-weight:600;color:var(--c-accent)">'+freedomProgress.toFixed(1)+'%</span>'+fpMsg
     +(yearsMsg?'<br>'+yearsMsg:'')
     +'</div></div></div>'
     +'<div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:16px">'
@@ -3677,7 +3776,7 @@ function renderComprehensiveReview(health,metrics,fin){
     +'<div style="font-size:14px;font-weight:700;color:var(--c-danger);margin-bottom:10px">需关注的维度（'+risks.length+'项）</div>'
     +risksHtml
     +'</div></div>'
-    +'<div style="background:#f7fafc;border-radius:10px;padding:16px">'
+    +'<div class="comprehensive-actions" style="background:#f7fafc;border-radius:10px;padding:16px">'
     +'<div style="font-size:14px;font-weight:700;color:var(--c-primary)">下一步行动清单</div>'
     +'<div style="font-size:11px;color:var(--c-text-sec);margin-top:3px;margin-bottom:8px">建议按顺序执行；每项都包含动作、完成标准与复盘时限。</div>'
     +actionsHtml
